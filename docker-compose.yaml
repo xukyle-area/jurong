@@ -48,8 +48,19 @@ services:
     networks:
       - kafka-network
 
+  headlamp:
+    image: ghcr.io/kinvolk/headlamp:latest
+    container_name: headlamp
+    network_mode: host
+    environment:
+      - HEADLAMP_CONFIG_DIR=/headlamp-config
+    volumes:
+      - ~/.kube/config:/root/.kube/config:ro
+      - headlamp-config:/headlamp-config
+
 volumes:
   kafka-data:
+  headlamp-config:
 
 networks:
   kafka-network:
