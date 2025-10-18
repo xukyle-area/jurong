@@ -1,24 +1,19 @@
-# Jurong - Kafka Deployment Environment
+# Jurong - Kafka + MySQL 开发环境
 
-### Kubernetes 方式
+🚀 **一个完整的开发环境**，包含 Kafka、MySQL、Headlamp 等服务，提供了在 Docker Desktop 环境下的完整解决方案。
+
+## ⚡ 快速开始
+
+### 一键启动所有服务
 ```bash
-./scripts/deploy-headlamp-k8s.sh
-```供了在 Docker Desktop 环境下部署 Kafka 的完整解决方案。
-
-## 快速开始
-
-### 使用 Docker Compose（推荐）
-
-```bash
-# 启动 Kafka 服务栈
-docker-compose up -d
-
-# 测试部署
-./scripts/test-kafka.sh
-
-# 访问 Kafka UI
-open http://localhost:8080
+# 启动完整服务栈 (Kafka + MySQL + 管理界面)
+./scripts/start-all.sh
 ```
+
+### 访问服务
+- **Kafka UI**: http://localhost:8080 (管理 Kafka)
+- **phpMyAdmin**: http://localhost:8081 (管理 MySQL)  
+- **Headlamp**: http://localhost:30466 (管理 Kubernetes)
 
 ### 使用 Kubernetes
 

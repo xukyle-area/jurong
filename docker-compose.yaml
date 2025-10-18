@@ -48,19 +48,44 @@ services:
     networks:
       - kafka-network
 
-  headlamp:
-    image: ghcr.io/kinvolk/headlamp:latest
-    container_name: headlamp
-    network_mode: host
+  mysql:
+    image: mysql:8.0
+    container_name: mysql
+    ports:
+      - "3306:3306"
     environment:
-      - HEADLAMP_CONFIG_DIR=/headlamp-config
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: myapp
+      MYSQL_USER: appuser
+      MYSQL_PASSWORD: apppassword
     volumes:
-      - ~/.kube/config:/root/.kube/config:ro
-      - headlamp-config:/headlamp-config
+      - mysql-data:/var/lib/mysql
+      - ./mysql/init:/docker-entrypoint-initdb.d
+    networks:
+      - kafka-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: phpmyadmin
+    ports:
+      - "8081:80"
+    environment:
+      PMA_HOST: mysql
+      PMA_USER: root
+      PMA_PASSWORD: rootpassword
+    depends_on:
+      - mysql
+    networks:
+      - kafka-network
 
 volumes:
   kafka-data:
-  headlamp-config:
+  mysql-data:
 
 networks:
   kafka-network:
