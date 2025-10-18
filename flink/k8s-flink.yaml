@@ -140,14 +140,20 @@ spec:
         - name: flink-data
           mountPath: /tmp
         livenessProbe:
-          tcpSocket:
-            port: 6122
-          initialDelaySeconds: 30
+          exec:
+            command:
+              - /bin/bash
+              - -c
+              - "ps aux | grep taskmanager | grep -v grep"
+          initialDelaySeconds: 60
           periodSeconds: 30
         readinessProbe:
-          tcpSocket:
-            port: 6122
-          initialDelaySeconds: 10
+          exec:
+            command:
+              - /bin/bash
+              - -c
+              - "ps aux | grep taskmanager | grep -v grep"
+          initialDelaySeconds: 30
           periodSeconds: 10
         resources:
           requests:
