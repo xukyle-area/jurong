@@ -48,12 +48,12 @@
 ### 主要工具
 ```bash
 # 平台管理 (替代所有旧的 start 脚本)
-./switch-env.sh deploy
-./switch-env.sh status
-./switch-env.sh port-forward
+./infra-manage.sh deploy
+./infra-manage.sh status
+./infra-manage.sh port-forward
 
 # 详细部署控制
-./flink/deploy-k8s-complete.sh deploy
+./flink/deploy.sh deploy
 ```
 
 ### 特殊场景工具  

@@ -14,8 +14,8 @@
 ### ✅ 更新的组件
 
 1. **主要脚本**
-   - `switch-env.sh` → 转换为纯 K8s 平台管理工具
-   - `flink/deploy-k8s-complete.sh` → 保持不变（已经是纯 K8s）
+   - `infra-manage.sh` → 转换为纯 K8s 平台管理工具
+   - `flink/deploy.sh` → 保持不变（已经是纯 K8s）
 
 2. **文档更新**
    - `README.md` → 全新的纯 K8s 项目介绍
@@ -28,24 +28,24 @@
 ### 快速开始
 ```bash
 # 部署数据平台
-./switch-env.sh deploy
+./infra-manage.sh deploy
 
 # 查看状态
-./switch-env.sh status
+./infra-manage.sh status
 
 # 启动端口转发
-./switch-env.sh port-forward
+./infra-manage.sh port-forward
 
 # 查看连接信息
-./switch-env.sh connection
+./infra-manage.sh connection
 ```
 
 ### 详细管理
 ```bash
 # 使用详细部署脚本
-./flink/deploy-k8s-complete.sh deploy
-./flink/deploy-k8s-complete.sh status
-./flink/deploy-k8s-complete.sh cleanup
+./flink/deploy.sh deploy
+./flink/deploy.sh status
+./flink/deploy.sh cleanup
 ```
 
 ## 🏗️ 架构优势
@@ -65,10 +65,10 @@ jurong/ （纯 Kubernetes 数据平台）
 ├── 📋 README.md                   # 全新项目介绍
 ├── 📋 DATA_PLATFORM_GUIDE.md      # 完整使用指南  
 ├── 📋 PROJECT_SUMMARY.md          # 项目总结
-├── 🔄 switch-env.sh               # K8s 平台管理工具
+├── 🔄 infra-manage.sh               # K8s 平台管理工具
 │
 ├── ☸️  flink/                     # Kubernetes 部署
-│   ├── deploy-k8s-complete.sh     # 完整部署脚本
+│   ├── deploy.sh     # 完整部署脚本
 │   ├── k8s-complete-stack.yaml    # 完整服务栈
 │   └── k8s-flink.yaml            # Flink 集群
 │
@@ -88,7 +88,7 @@ jurong/ （纯 Kubernetes 数据平台）
 
 用户现在可以：
 
-1. **立即开始** - 运行 `./switch-env.sh deploy`
+1. **立即开始** - 运行 `./infra-manage.sh deploy`
 2. **开发应用** - 使用提供的连接配置
 3. **监控管理** - 通过 Web UI 和 kubectl 管理服务
 4. **扩展平台** - 基于 K8s 添加更多服务

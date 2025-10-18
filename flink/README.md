@@ -4,7 +4,7 @@
 
 ### 🚀 **核心部署文件**（必需）
 
-1. **`deploy-k8s-complete.sh`** ⭐ 
+1. **`deploy.sh`** ⭐ 
    - **主要部署脚本**，大部分用户使用这个
    - 一键部署完整数据平台
    - 包含部署、状态检查、清理等功能
@@ -38,13 +38,13 @@
 ### 普通用户（推荐）
 ```bash
 # 完整平台部署
-./deploy-k8s-complete.sh deploy
+./deploy.sh deploy
 
 # 查看状态
-./deploy-k8s-complete.sh status
+./deploy.sh status
 
 # 清理环境
-./deploy-k8s-complete.sh cleanup
+./deploy.sh cleanup
 ```
 
 ### AWS EMR 用户
@@ -59,17 +59,17 @@
 ### 开发者
 ```bash
 # 只部署基础设施
-./deploy-k8s-complete.sh infrastructure
+./deploy.sh infrastructure
 
 # 单独部署 Flink
-./deploy-k8s-complete.sh flink
+./deploy.sh flink
 
 ```
 
 ## 🔍 文件依赖关系
 
 ```
-deploy-k8s-complete.sh
+deploy.sh
 ├── k8s-complete-stack.yaml  (基础设施)
 └── k8s-flink.yaml          (Flink 集群)
 
@@ -81,10 +81,10 @@ deploy.sh
 
 ## 💡 最佳实践
 
-- **新用户**: 从 `deploy-k8s-complete.sh` 开始
+- **新用户**: 从 `deploy.sh` 开始
 - **生产环境**: 考虑使用 AWS EMR 方案
 - **开发测试**: 使用分步部署，便于调试
 
 ---
 
-🚀 **开始使用**: `./deploy-k8s-complete.sh deploy`
+🚀 **开始使用**: `./deploy.sh deploy`

@@ -43,7 +43,7 @@
 如果文档中有任何不清楚的地方，请检查：
 1. 相关的脚本文件
 2. Kubernetes 日志 (`kubectl logs -f [pod] -n data-platform`)
-3. 使用 `./switch-env.sh status` 查看平台状态
+3. 使用 `./infra-manage.sh status` 查看平台状态
 
 ---
 

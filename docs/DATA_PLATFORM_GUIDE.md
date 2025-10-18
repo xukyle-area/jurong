@@ -26,10 +26,10 @@
 kubectl cluster-info
 
 # 部署完整数据平台
-./flink/deploy-k8s-complete.sh deploy
+./flink/deploy.sh deploy
 
 # 查看部署状态
-./flink/deploy-k8s-complete.sh status
+./flink/deploy.sh status
 
 # 端口转发访问服务
 kubectl port-forward -n data-platform svc/kafka-ui 8080:8080
@@ -75,13 +75,13 @@ kubectl port-forward -n data-platform svc/flink-jobmanager-ui 8083:8083
 
 ```bash
 # 部署完整平台
-./flink/deploy-k8s-complete.sh deploy
+./flink/deploy.sh deploy
 
 # 查看服务状态
-./flink/deploy-k8s-complete.sh status
+./flink/deploy.sh status
 
 # 清理所有资源
-./flink/deploy-k8s-complete.sh cleanup
+./flink/deploy.sh cleanup
 ```
 
 ### 2. 连接服务进行开发
@@ -122,7 +122,7 @@ curl -X POST http://localhost:8083/jars/upload \
 
 ```bash
 # 自动创建主题（已在部署脚本中包含）
-./flink/deploy-k8s-complete.sh topics
+./flink/deploy.sh topics
 
 # 手动创建主题
 kubectl exec -n data-platform statefulset/kafka -- \
@@ -151,10 +151,10 @@ kubectl exec -it -n data-platform statefulset/kafka -- \
 
 ```bash
 # 部署服务
-./flink/deploy-k8s-complete.sh deploy
+./flink/deploy.sh deploy
 
 # 查看服务状态
-./flink/deploy-k8s-complete.sh status
+./flink/deploy.sh status
 
 # 重启特定服务
 kubectl rollout restart deployment/kafka-ui -n data-platform
@@ -211,12 +211,12 @@ aws eks update-kubeconfig --region us-west-2 --name data-platform
 
 ```bash
 # 完整部署
-./flink/deploy-k8s-complete.sh deploy
+./flink/deploy.sh deploy
 
 # 分步部署
-./flink/deploy-k8s-complete.sh infrastructure  # 基础设施
-./flink/deploy-k8s-complete.sh flink          # Flink 集群
-./flink/deploy-k8s-complete.sh topics         # Kafka 主题
+./flink/deploy.sh infrastructure  # 基础设施
+./flink/deploy.sh flink          # Flink 集群
+./flink/deploy.sh topics         # Kafka 主题
 ```
 
 ### 3. 监控和维护
@@ -407,7 +407,7 @@ kubectl exec redis-0 -n data-platform -- \
 如有问题，请查看：
 - 项目 README.md
 - scripts/ 目录下的帮助脚本
-- 使用 `./flink/deploy-k8s-complete.sh help` 获取帮助
+- 使用 `./flink/deploy.sh help` 获取帮助
 
 ---
 

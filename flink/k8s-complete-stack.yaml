@@ -3,9 +3,9 @@
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: data-platform
+  name: infra
   labels:
-    name: data-platform
+    name: infra
 
 ---
 # ConfigMap for MySQL initialization scripts
@@ -13,7 +13,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: mysql-init-scripts
-  namespace: data-platform
+  namespace: infra
 data:
   01-init.sql: |
     -- MySQL 初始化脚本
@@ -129,7 +129,7 @@ apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: zookeeper
-  namespace: data-platform
+  namespace: infra
 spec:
   serviceName: zookeeper
   replicas: 1
@@ -196,7 +196,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: zookeeper
-  namespace: data-platform
+  namespace: infra
 spec:
   selector:
     app: zookeeper
@@ -211,7 +211,7 @@ apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: kafka
-  namespace: data-platform
+  namespace: infra
 spec:
   serviceName: kafka
   replicas: 1
@@ -286,7 +286,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: kafka
-  namespace: data-platform
+  namespace: infra
 spec:
   selector:
     app: kafka
@@ -301,7 +301,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: kafka-external
-  namespace: data-platform
+  namespace: infra
 spec:
   type: LoadBalancer
   selector:
@@ -316,7 +316,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: kafka-ui
-  namespace: data-platform
+  namespace: infra
 spec:
   replicas: 1
   selector:
@@ -358,7 +358,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: kafka-ui
-  namespace: data-platform
+  namespace: infra
 spec:
   type: LoadBalancer
   selector:
@@ -373,7 +373,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: mysql
-  namespace: data-platform
+  namespace: infra
 spec:
   replicas: 1
   selector:
@@ -435,7 +435,7 @@ apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: mysql-pvc
-  namespace: data-platform
+  namespace: infra
 spec:
   accessModes:
   - ReadWriteOnce
@@ -450,7 +450,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: mysql
-  namespace: data-platform
+  namespace: infra
 spec:
   selector:
     app: mysql
@@ -464,7 +464,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: mysql-external
-  namespace: data-platform
+  namespace: infra
 spec:
   type: LoadBalancer
   selector:
@@ -479,7 +479,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: phpmyadmin
-  namespace: data-platform
+  namespace: infra
 spec:
   replicas: 1
   selector:
@@ -521,7 +521,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: phpmyadmin
-  namespace: data-platform
+  namespace: infra
 spec:
   type: LoadBalancer
   selector:
@@ -536,7 +536,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: redis
-  namespace: data-platform
+  namespace: infra
 spec:
   replicas: 1
   selector:
@@ -590,7 +590,7 @@ apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: redis-pvc
-  namespace: data-platform
+  namespace: infra
 spec:
   accessModes:
   - ReadWriteOnce
@@ -605,7 +605,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: redis
-  namespace: data-platform
+  namespace: infra
 spec:
   selector:
     app: redis
@@ -619,7 +619,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: redis-external
-  namespace: data-platform
+  namespace: infra
 spec:
   type: LoadBalancer
   selector:
@@ -634,7 +634,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: redis-commander
-  namespace: data-platform
+  namespace: infra
 spec:
   replicas: 1
   selector:
@@ -672,7 +672,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: redis-commander
-  namespace: data-platform
+  namespace: infra
 spec:
   type: LoadBalancer
   selector:

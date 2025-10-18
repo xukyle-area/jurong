@@ -4,7 +4,7 @@
 
 Scripts 目录包含了 Kubernetes 数据平台的辅助管理脚本。
 
-> **注意**: 主要的部署和管理功能已经集成到了根目录的 `switch-env.sh` 和 `flink/deploy-k8s-complete.sh` 中。
+> **注意**: 主要的部署和管理功能已经集成到了根目录的 `infra-manage.sh` 和 `flink/deploy.sh` 中。
 
 ## 🛠️ scripts/helper/ - Kubernetes 辅助工具
 
@@ -45,9 +45,9 @@ Scripts 目录包含了 Kubernetes 数据平台的辅助管理脚本。
 
 | 功能                | 推荐工具                                  | 备用工具                                |
 | ------------------- | ----------------------------------------- | --------------------------------------- |
-| **平台部署**        | `./switch-env.sh deploy`                  | `./flink/deploy-k8s-complete.sh deploy` |
-| **状态查看**        | `./switch-env.sh status`                  | `kubectl get pods -n data-platform`     |
-| **端口转发**        | `./switch-env.sh port-forward`            | 手动 `kubectl port-forward`             |
+| **平台部署**        | `./infra-manage.sh deploy`                  | `./flink/deploy.sh deploy` |
+| **状态查看**        | `./infra-manage.sh status`                  | `kubectl get pods -n data-platform`     |
+| **端口转发**        | `./infra-manage.sh port-forward`            | 手动 `kubectl port-forward`             |
 | **Kubernetes 管理** | `./scripts/helper/deploy-headlamp-k8s.sh` | `kubectl` 命令行                        |
 | **EMR 管理**        | `./scripts/helper/manage-emr-flink.sh`    | AWS 控制台                              |
 

@@ -44,7 +44,7 @@ jurong/
 ├── � PROJECT_SUMMARY.md          # 项目总结
 │
 ├── ☸️  flink/                     # Kubernetes 部署
-│   ├── deploy-k8s-complete.sh     # K8s 完整部署脚本
+│   ├── deploy.sh     # K8s 完整部署脚本
 │   ├── k8s-complete-stack.yaml    # 完整服务栈
 │   └── k8s-flink.yaml            # Flink 集群配置
 │
@@ -68,16 +68,16 @@ jurong/
 
 ```bash
 # � 部署完整数据平台
-./flink/deploy-k8s-complete.sh deploy
+./flink/deploy.sh deploy
 
 # 📊 查看部署状态
-./flink/deploy-k8s-complete.sh status
+./flink/deploy.sh status
 
 # 🔍 获取服务信息
-./flink/deploy-k8s-complete.sh info
+./flink/deploy.sh info
 
 # 🧹 清理所有资源
-./flink/deploy-k8s-complete.sh cleanup
+./flink/deploy.sh cleanup
 ```
 
 ### 2. 完整的服务访问
@@ -122,7 +122,7 @@ spring.redis.host=localhost
 
 ```bash
 # 1. 🚀 启动开发环境
-./switch-env.sh dev
+./infra-manage.sh dev
 
 # 2. 🧪 开发和测试你的应用
 # - 连接 Kafka: localhost:9092
@@ -135,10 +135,10 @@ spring.redis.host=localhost
 # - 监控缓存
 
 # 4. 🎯 准备生产部署
-./switch-env.sh prod
+./infra-manage.sh prod
 
 # 5. ✅ 验证生产环境
-./flink/deploy-k8s-complete.sh status
+./flink/deploy.sh status
 ```
 
 ### 测试和验证
@@ -178,13 +178,13 @@ curl http://localhost:8083/overview
 kubectl cluster-info
 
 # 2. 一键部署全栈
-./flink/deploy-k8s-complete.sh deploy
+./flink/deploy.sh deploy
 
 # 3. 验证部署
-./flink/deploy-k8s-complete.sh status
+./flink/deploy.sh status
 
 # 4. 获取访问信息
-./flink/deploy-k8s-complete.sh info
+./flink/deploy.sh info
 ```
 
 ## 🎯 下一步可以做什么
