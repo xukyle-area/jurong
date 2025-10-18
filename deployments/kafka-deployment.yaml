@@ -25,8 +25,20 @@ spec:
           value: PLAINTEXT://kafka:9092
         - name: KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR
           value: "1"
+        - name: KAFKA_AUTO_CREATE_TOPICS_ENABLE
+          value: "true"
+        - name: KAFKA_LOG_RETENTION_HOURS
+          value: "168"
+        - name: KAFKA_LOG_SEGMENT_BYTES
+          value: "1073741824"
         ports:
         - containerPort: 9092
+        volumeMounts:
+        - name: kafka-data
+          mountPath: /kafka
+      volumes:
+      - name: kafka-data
+        emptyDir: {}
 ---
 apiVersion: v1
 kind: Service
@@ -39,3 +51,4 @@ spec:
     targetPort: 9092
   selector:
     app: kafka
+  type: NodePort
