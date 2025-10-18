@@ -1,7 +1,7 @@
 -- 创建 Kafka 相关的数据表
 -- 用于存储 Kafka 消息处理的状态信息
 
-USE myapp;
+USE projects;
 
 -- Kafka 主题元数据表
 CREATE TABLE kafka_topics (

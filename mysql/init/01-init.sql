@@ -1,8 +1,8 @@
 -- MySQL 初始化脚本
 -- 创建应用数据库和示例表
 
-CREATE DATABASE IF NOT EXISTS myapp;
-USE myapp;
+CREATE DATABASE IF NOT EXISTS projects;
+USE projects;
 
 -- 用户表
 CREATE TABLE users (

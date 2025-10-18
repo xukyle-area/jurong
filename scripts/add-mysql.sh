@@ -28,7 +28,7 @@ cat << 'EOF' >> docker-compose.yaml
       - "3306:3306"
     environment:
       MYSQL_ROOT_PASSWORD: rootpassword
-      MYSQL_DATABASE: myapp
+      MYSQL_DATABASE: projects
       MYSQL_USER: appuser
       MYSQL_PASSWORD: apppassword
     volumes:
@@ -68,8 +68,8 @@ echo ""
 echo "6. 创建示例初始化脚本..."
 cat << 'EOF' > mysql/init/01-init.sql
 -- 创建示例表
-CREATE DATABASE IF NOT EXISTS myapp;
-USE myapp;
+CREATE DATABASE IF NOT EXISTS projects;
+USE projects;
 
 CREATE TABLE users (
     id INT AUTO_INCREMENT PRIMARY KEY,

@@ -43,34 +43,62 @@ kubectl apply -f deployments/kafka-deployment.yaml
 ```
 访问地址: http://localhost:30466
 
-### Docker Compose 方式
-```bash
-./scripts/start-headlamp.sh
-```
+## 🏗️ 架构概览
 
-### 故障排除
-如果遇到连接问题，请参考：
-- [Headlamp 故障排除指南](HEADLAMP_TROUBLESHOOTING.md)
-- 运行验证脚本: `./scripts/verify-headlamp.sh`
+### Docker Compose (应用服务栈)
+- **Kafka** + **ZooKeeper** - 消息队列服务
+- **MySQL** - 关系型数据库
+- **Kafka UI** - Kafka 管理界面
+- **phpMyAdmin** - MySQL 管理界面
+
+### Kubernetes (集群管理工具)
+- **Headlamp** - Kubernetes 集群管理界面
+
+## 📚 详细文档
+
+所有详细文档都在 **[docs/](./docs/)** 目录中：
+
+### 🚀 快速入门
+- **[docs/ARCHITECTURE_CLEANUP.md](./docs/ARCHITECTURE_CLEANUP.md)** - 架构说明和服务访问
+- **[docs/KAFKA_DEPLOYMENT.md](./docs/KAFKA_DEPLOYMENT.md)** - Kafka 部署指南
+
+### 📖 部署指南  
+- **[docs/MYSQL_DEPLOYMENT_GUIDE.md](./docs/MYSQL_DEPLOYMENT_GUIDE.md)** - MySQL 部署指南
+- **[docs/DOCKER_COMPOSE_VS_K8S.md](./docs/DOCKER_COMPOSE_VS_K8S.md)** - 架构选择指南
+
+### 🔧 故障排除
+- **[docs/HEADLAMP_TROUBLESHOOTING.md](./docs/HEADLAMP_TROUBLESHOOTING.md)** - Headlamp 故障排除
 
 ## 📁 项目结构
 
 ```
 jurong/
-├── scripts/                    # 所有脚本文件
-│   ├── test-kafka.sh          # Kafka 测试脚本
-│   ├── deploy-headlamp-k8s.sh # Headlamp Kubernetes 部署
-│   ├── generate-clean-token.sh # 生成登录令牌
-│   └── ...                    # 其他工具脚本
-├── deployments/               # Kubernetes 部署文件
-│   ├── kafka-deployment.yaml
-│   ├── headlamp-deployment.yaml
-│   └── ...
-├── docker-compose.yaml        # Docker Compose 配置
-└── README.md
+├── docs/                      # 📚 所有项目文档
+├── scripts/                   # 🔧 部署和管理脚本
+├── deployments/               # ☸️  Kubernetes 部署文件
+├── mysql/                     # 🗄️  MySQL 初始化脚本
+├── docker-compose.yaml        # 🐳 Docker Compose 配置
+└── README.md                  # 📖 项目说明
+```
 
-## 文档
+## 🎯 常用命令
 
-详细部署说明请参考 [KAFKA_DEPLOYMENT.md](KAFKA_DEPLOYMENT.md)
+```bash
+# 启动所有服务
+./scripts/start-all.sh
 
-## For Kubernetes
+# 测试 Kafka 连接
+./scripts/test-kafka.sh
+
+# 检查服务状态
+docker-compose ps
+
+# 停止所有服务
+docker-compose down
+```
+
+## 📞 获取帮助
+
+1. 查看 **[docs/README.md](./docs/README.md)** 文档索引
+2. 检查相关脚本的帮助信息
+3. 查看服务日志进行故障排查

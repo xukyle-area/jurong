@@ -45,7 +45,7 @@ services:
       - "3306:3306"
     environment:
       MYSQL_ROOT_PASSWORD: rootpassword
-      MYSQL_DATABASE: myapp
+      MYSQL_DATABASE: projects
       MYSQL_USER: appuser
       MYSQL_PASSWORD: apppassword
     volumes:
@@ -127,7 +127,7 @@ spec:
               name: mysql-secret
               key: mysql-root-password
         - name: MYSQL_DATABASE
-          value: myapp
+          value: projects
         - name: MYSQL_USER
           value: appuser
         - name: MYSQL_PASSWORD
@@ -185,7 +185,7 @@ services:
       - "3306:3306"
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-rootpassword}
-      MYSQL_DATABASE: ${MYSQL_DATABASE:-myapp}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-projects}
       MYSQL_USER: ${MYSQL_USER:-appuser}
       MYSQL_PASSWORD: ${MYSQL_PASSWORD:-apppassword}
     volumes:
@@ -223,3 +223,11 @@ volumes:
 - MySQL + Kafka → Docker Compose（开发栈）
 - Headlamp → Kubernetes（管理工具）
 - 生产时再迁移数据库到 K8s
+
+
+
+
+
+```sql
+docker exec -i mysql mysql -u root -prootpassword < /Users/ganten/workspace/github/jurong/mysql/scripts/create-project-db.sql
+```
