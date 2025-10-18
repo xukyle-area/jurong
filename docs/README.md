@@ -7,8 +7,8 @@
 ## 📋 文档列表
 
 ### 🏗️ **架构和部署**
-- **[ARCHITECTURE_CLEANUP.md](./ARCHITECTURE_CLEANUP.md)** - 清理后的架构说明，解决重复 Headlamp 问题
-- **[DOCKER_COMPOSE_VS_K8S.md](./DOCKER_COMPOSE_VS_K8S.md)** - Docker Compose 与 Kubernetes 架构对比
+- **[ARCHITECTURE_CLEANUP.md](./ARCHITECTURE_CLEANUP.md)** - Kubernetes 数据平台架构说明
+- **[FLINK_GUIDE.md](./FLINK_GUIDE.md)** - Apache Flink 流计算部署和使用指南
 
 ### ⚙️ **服务部署指南**
 - **[KAFKA_DEPLOYMENT.md](./KAFKA_DEPLOYMENT.md)** - Kafka 集群部署完整指南
@@ -26,7 +26,7 @@
 
 ### 问题排查：
 - 🔧 Headlamp 访问问题 → [HEADLAMP_TROUBLESHOOTING.md](./HEADLAMP_TROUBLESHOOTING.md)
-- 🏗️ 架构选择困惑 → [DOCKER_COMPOSE_VS_K8S.md](./DOCKER_COMPOSE_VS_K8S.md)
+- � Flink 流计算使用 → [FLINK_GUIDE.md](./FLINK_GUIDE.md)
 
 ## 📁 相关目录
 
@@ -42,8 +42,8 @@
 
 如果文档中有任何不清楚的地方，请检查：
 1. 相关的脚本文件
-2. 容器日志 (`docker-compose logs -f [service]`)
-3. Kubernetes 日志 (`kubectl logs -f [pod]`)
+2. Kubernetes 日志 (`kubectl logs -f [pod] -n data-platform`)
+3. 使用 `./switch-env.sh status` 查看平台状态
 
 ---
 

@@ -1,0 +1,219 @@
+---
+# Flink JobManager Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: flink-jobmanager
+  namespace: data-platform
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: flink
+      component: jobmanager
+  template:
+    metadata:
+      labels:
+        app: flink
+        component: jobmanager
+    spec:
+      containers:
+      - name: jobmanager
+        image: flink:1.17.2-scala_2.12-java8
+        args: ["jobmanager"]
+        ports:
+        - containerPort: 6123
+          name: rpc
+        - containerPort: 6124
+          name: blob-server
+        - containerPort: 8081
+          name: webui
+        env:
+        - name: FLINK_PROPERTIES
+          value: |
+            jobmanager.rpc.address: flink-jobmanager
+            taskmanager.numberOfTaskSlots: 2
+            parallelism.default: 1
+            jobmanager.execution.failover-strategy: region
+            execution.checkpointing.interval: 60s
+            restart-strategy: fixed-delay
+            restart-strategy.fixed-delay.attempts: 3
+            restart-strategy.fixed-delay.delay: 10s
+            state.backend: hashmap
+            state.checkpoints.dir: file:///tmp/checkpoints
+            state.savepoints.dir: file:///tmp/savepoints
+        volumeMounts:
+        - name: flink-data
+          mountPath: /tmp
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 8081
+          initialDelaySeconds: 60
+          periodSeconds: 30
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 8081
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        resources:
+          requests:
+            memory: "1Gi"
+            cpu: "0.5"
+          limits:
+            memory: "2Gi"
+            cpu: "1"
+      volumes:
+      - name: flink-data
+        emptyDir: {}
+
+---
+# Flink JobManager Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: flink-jobmanager
+  namespace: data-platform
+spec:
+  type: ClusterIP
+  ports:
+  - name: rpc
+    port: 6123
+  - name: blob-server
+    port: 6124
+  - name: webui
+    port: 8081
+  selector:
+    app: flink
+    component: jobmanager
+
+---
+# Flink JobManager External Service (Web UI)
+apiVersion: v1
+kind: Service
+metadata:
+  name: flink-jobmanager-ui
+  namespace: data-platform
+spec:
+  type: LoadBalancer
+  ports:
+  - port: 8083
+    targetPort: 8081
+  selector:
+    app: flink
+    component: jobmanager
+
+---
+# Flink TaskManager Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: flink-taskmanager
+  namespace: data-platform
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: flink
+      component: taskmanager
+  template:
+    metadata:
+      labels:
+        app: flink
+        component: taskmanager
+    spec:
+      containers:
+      - name: taskmanager
+        image: flink:1.17.2-scala_2.12-java8
+        args: ["taskmanager"]
+        ports:
+        - containerPort: 6122
+          name: data
+        env:
+        - name: FLINK_PROPERTIES
+          value: |
+            jobmanager.rpc.address: flink-jobmanager
+            taskmanager.numberOfTaskSlots: 2
+            parallelism.default: 1
+        volumeMounts:
+        - name: flink-data
+          mountPath: /tmp
+        livenessProbe:
+          tcpSocket:
+            port: 6122
+          initialDelaySeconds: 30
+          periodSeconds: 30
+        readinessProbe:
+          tcpSocket:
+            port: 6122
+          initialDelaySeconds: 10
+          periodSeconds: 10
+        resources:
+          requests:
+            memory: "1Gi"
+            cpu: "0.5"
+          limits:
+            memory: "2Gi"
+            cpu: "1"
+      volumes:
+      - name: flink-data
+        emptyDir: {}
+      initContainers:
+      - name: wait-for-jobmanager
+        image: busybox:1.35
+        command: ['sh', '-c', 'until nc -z flink-jobmanager 6123; do echo waiting for jobmanager; sleep 2; done;']
+
+---
+# Ingress for external access (optional, requires ingress controller)
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: data-platform-ingress
+  namespace: data-platform
+  annotations:
+    kubernetes.io/ingress.class: alb
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/target-type: ip
+spec:
+  rules:
+  - host: kafka-ui.your-domain.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: kafka-ui
+            port:
+              number: 8080
+  - host: phpmyadmin.your-domain.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: phpmyadmin
+            port:
+              number: 8081
+  - host: redis-commander.your-domain.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: redis-commander
+            port:
+              number: 8082
+  - host: flink.your-domain.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: flink-jobmanager-ui
+            port:
+              number: 8083

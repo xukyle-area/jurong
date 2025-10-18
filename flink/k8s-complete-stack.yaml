@@ -1,0 +1,682 @@
+---
+# Namespace for the data platform
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: data-platform
+  labels:
+    name: data-platform
+
+---
+# ConfigMap for MySQL initialization scripts
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mysql-init-scripts
+  namespace: data-platform
+data:
+  01-init.sql: |
+    -- MySQL 初始化脚本
+    -- 创建应用数据库和示例表
+    
+    CREATE DATABASE IF NOT EXISTS projects;
+    USE projects;
+    
+    -- 用户表
+    CREATE TABLE users (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        username VARCHAR(50) NOT NULL UNIQUE,
+        email VARCHAR(100) NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    );
+    
+    -- 产品表
+    CREATE TABLE products (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        name VARCHAR(100) NOT NULL,
+        description TEXT,
+        price DECIMAL(10,2),
+        stock INT DEFAULT 0,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+    
+    -- 订单表
+    CREATE TABLE orders (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        user_id INT,
+        total_amount DECIMAL(10,2),
+        status ENUM('pending', 'processing', 'completed', 'cancelled') DEFAULT 'pending',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users(id)
+    );
+    
+    -- 插入示例数据
+    INSERT INTO users (username, email) VALUES
+    ('admin', 'admin@example.com'),
+    ('john_doe', 'john@example.com'),
+    ('jane_smith', 'jane@example.com');
+    
+    INSERT INTO products (name, description, price, stock) VALUES
+    ('笔记本电脑', '高性能办公笔记本', 5999.00, 50),
+    ('无线鼠标', '蓝牙无线鼠标', 99.00, 200),
+    ('机械键盘', 'RGB背光机械键盘', 299.00, 100);
+    
+    INSERT INTO orders (user_id, total_amount, status) VALUES
+    (2, 6098.00, 'completed'),
+    (3, 398.00, 'processing');
+    
+    -- 创建索引
+    CREATE INDEX idx_users_email ON users(email);
+    CREATE INDEX idx_orders_user_id ON orders(user_id);
+    CREATE INDEX idx_orders_status ON orders(status);
+
+  02-kafka-tables.sql: |
+    -- 创建 Kafka 相关的数据表
+    -- 用于存储 Kafka 消息处理的状态信息
+    
+    USE projects;
+    
+    -- Kafka 主题元数据表
+    CREATE TABLE kafka_topics (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        topic_name VARCHAR(100) NOT NULL UNIQUE,
+        partition_count INT DEFAULT 1,
+        replication_factor INT DEFAULT 1,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+    
+    -- Kafka 消息处理状态表
+    CREATE TABLE kafka_message_status (
+        id BIGINT AUTO_INCREMENT PRIMARY KEY,
+        topic VARCHAR(100) NOT NULL,
+        partition_id INT NOT NULL,
+        offset_value BIGINT NOT NULL,
+        message_key VARCHAR(255),
+        processed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        status ENUM('pending', 'processed', 'failed') DEFAULT 'pending',
+        retry_count INT DEFAULT 0,
+        error_message TEXT
+    );
+    
+    -- 用户活动日志表（接收来自 Kafka 的事件）
+    CREATE TABLE user_activities (
+        id BIGINT AUTO_INCREMENT PRIMARY KEY,
+        user_id INT,
+        activity_type VARCHAR(50),
+        activity_data JSON,
+        source_topic VARCHAR(100),
+        kafka_offset BIGINT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users(id)
+    );
+    
+    -- 插入示例 Kafka 主题
+    INSERT INTO kafka_topics (topic_name, partition_count) VALUES
+    ('user-events', 3),
+    ('order-events', 2),
+    ('product-updates', 1);
+    
+    -- 创建索引
+    CREATE INDEX idx_kafka_message_status_topic_partition ON kafka_message_status(topic, partition_id);
+    CREATE INDEX idx_kafka_message_status_offset ON kafka_message_status(offset_value);
+    CREATE INDEX idx_user_activities_user_id ON user_activities(user_id);
+    CREATE INDEX idx_user_activities_type ON user_activities(activity_type);
+
+---
+# ZooKeeper StatefulSet
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: zookeeper
+  namespace: data-platform
+spec:
+  serviceName: zookeeper
+  replicas: 1
+  selector:
+    matchLabels:
+      app: zookeeper
+  template:
+    metadata:
+      labels:
+        app: zookeeper
+    spec:
+      containers:
+      - name: zookeeper
+        image: confluentinc/cp-zookeeper:7.4.0
+        ports:
+        - containerPort: 2181
+        env:
+        - name: ZOOKEEPER_CLIENT_PORT
+          value: "2181"
+        - name: ZOOKEEPER_TICK_TIME
+          value: "2000"
+        volumeMounts:
+        - name: zookeeper-data
+          mountPath: /var/lib/zookeeper/data
+        - name: zookeeper-logs
+          mountPath: /var/lib/zookeeper/log
+        livenessProbe:
+          exec:
+            command:
+            - /bin/bash
+            - -c
+            - "echo ruok | nc localhost 2181 | grep imok"
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          exec:
+            command:
+            - /bin/bash
+            - -c
+            - "echo ruok | nc localhost 2181 | grep imok"
+          initialDelaySeconds: 5
+          periodSeconds: 5
+  volumeClaimTemplates:
+  - metadata:
+      name: zookeeper-data
+    spec:
+      accessModes: ["ReadWriteOnce"]
+      storageClassName: gp3
+      resources:
+        requests:
+          storage: 10Gi
+  - metadata:
+      name: zookeeper-logs
+    spec:
+      accessModes: ["ReadWriteOnce"]
+      storageClassName: gp3
+      resources:
+        requests:
+          storage: 5Gi
+
+---
+# ZooKeeper Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: zookeeper
+  namespace: data-platform
+spec:
+  selector:
+    app: zookeeper
+  ports:
+  - port: 2181
+    targetPort: 2181
+  clusterIP: None
+
+---
+# Kafka StatefulSet
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: kafka
+  namespace: data-platform
+spec:
+  serviceName: kafka
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kafka
+  template:
+    metadata:
+      labels:
+        app: kafka
+    spec:
+      containers:
+      - name: kafka
+        image: confluentinc/cp-kafka:7.4.0
+        ports:
+        - containerPort: 9092
+        env:
+        - name: KAFKA_BROKER_ID
+          value: "1"
+        - name: KAFKA_ZOOKEEPER_CONNECT
+          value: "zookeeper:2181"
+        - name: KAFKA_ADVERTISED_LISTENERS
+          value: "PLAINTEXT://kafka:9092"
+        - name: KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR
+          value: "1"
+        - name: KAFKA_AUTO_CREATE_TOPICS_ENABLE
+          value: "true"
+        - name: KAFKA_LOG_RETENTION_HOURS
+          value: "168"
+        - name: KAFKA_LOG_SEGMENT_BYTES
+          value: "1073741824"
+        - name: KAFKA_LISTENER_SECURITY_PROTOCOL_MAP
+          value: "PLAINTEXT:PLAINTEXT"
+        - name: KAFKA_INTER_BROKER_LISTENER_NAME
+          value: "PLAINTEXT"
+        volumeMounts:
+        - name: kafka-data
+          mountPath: /kafka
+        livenessProbe:
+          exec:
+            command:
+            - /bin/bash
+            - -c
+            - "kafka-topics --bootstrap-server localhost:9092 --list"
+          initialDelaySeconds: 60
+          periodSeconds: 30
+        readinessProbe:
+          exec:
+            command:
+            - /bin/bash
+            - -c
+            - "kafka-topics --bootstrap-server localhost:9092 --list"
+          initialDelaySeconds: 30
+          periodSeconds: 10
+      initContainers:
+      - name: wait-for-zookeeper
+        image: busybox:1.35
+        command: ['sh', '-c', 'until nc -z zookeeper 2181; do echo waiting for zookeeper; sleep 2; done;']
+  volumeClaimTemplates:
+  - metadata:
+      name: kafka-data
+    spec:
+      accessModes: ["ReadWriteOnce"]
+      storageClassName: gp3
+      resources:
+        requests:
+          storage: 50Gi
+
+---
+# Kafka Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: kafka
+  namespace: data-platform
+spec:
+  selector:
+    app: kafka
+  ports:
+  - port: 9092
+    targetPort: 9092
+  clusterIP: None
+
+---
+# Kafka External Service (LoadBalancer)
+apiVersion: v1
+kind: Service
+metadata:
+  name: kafka-external
+  namespace: data-platform
+spec:
+  type: LoadBalancer
+  selector:
+    app: kafka
+  ports:
+  - port: 9092
+    targetPort: 9092
+
+---
+# Kafka UI Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kafka-ui
+  namespace: data-platform
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kafka-ui
+  template:
+    metadata:
+      labels:
+        app: kafka-ui
+    spec:
+      containers:
+      - name: kafka-ui
+        image: provectuslabs/kafka-ui:latest
+        ports:
+        - containerPort: 8080
+        env:
+        - name: KAFKA_CLUSTERS_0_NAME
+          value: "local"
+        - name: KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS
+          value: "kafka:9092"
+        - name: KAFKA_CLUSTERS_0_ZOOKEEPER
+          value: "zookeeper:2181"
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 8080
+          initialDelaySeconds: 60
+          periodSeconds: 30
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 10
+
+---
+# Kafka UI Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: kafka-ui
+  namespace: data-platform
+spec:
+  type: LoadBalancer
+  selector:
+    app: kafka-ui
+  ports:
+  - port: 8080
+    targetPort: 8080
+
+---
+# MySQL Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mysql
+  namespace: data-platform
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mysql
+  template:
+    metadata:
+      labels:
+        app: mysql
+    spec:
+      containers:
+      - name: mysql
+        image: mysql:8.0
+        ports:
+        - containerPort: 3306
+        env:
+        - name: MYSQL_ROOT_PASSWORD
+          value: "rootpassword"
+        - name: MYSQL_DATABASE
+          value: "projects"
+        - name: MYSQL_USER
+          value: "appuser"
+        - name: MYSQL_PASSWORD
+          value: "apppassword"
+        volumeMounts:
+        - name: mysql-data
+          mountPath: /var/lib/mysql
+        - name: mysql-init
+          mountPath: /docker-entrypoint-initdb.d
+        livenessProbe:
+          exec:
+            command:
+            - mysqladmin
+            - ping
+            - -h
+            - localhost
+          initialDelaySeconds: 30
+          periodSeconds: 30
+        readinessProbe:
+          exec:
+            command:
+            - mysqladmin
+            - ping
+            - -h
+            - localhost
+          initialDelaySeconds: 10
+          periodSeconds: 10
+      volumes:
+      - name: mysql-data
+        persistentVolumeClaim:
+          claimName: mysql-pvc
+      - name: mysql-init
+        configMap:
+          name: mysql-init-scripts
+
+---
+# MySQL PVC
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mysql-pvc
+  namespace: data-platform
+spec:
+  accessModes:
+  - ReadWriteOnce
+  storageClassName: gp3
+  resources:
+    requests:
+      storage: 20Gi
+
+---
+# MySQL Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: mysql
+  namespace: data-platform
+spec:
+  selector:
+    app: mysql
+  ports:
+  - port: 3306
+    targetPort: 3306
+
+---
+# MySQL External Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: mysql-external
+  namespace: data-platform
+spec:
+  type: LoadBalancer
+  selector:
+    app: mysql
+  ports:
+  - port: 3306
+    targetPort: 3306
+
+---
+# phpMyAdmin Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: phpmyadmin
+  namespace: data-platform
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: phpmyadmin
+  template:
+    metadata:
+      labels:
+        app: phpmyadmin
+    spec:
+      containers:
+      - name: phpmyadmin
+        image: phpmyadmin/phpmyadmin
+        ports:
+        - containerPort: 80
+        env:
+        - name: PMA_HOST
+          value: "mysql"
+        - name: PMA_USER
+          value: "root"
+        - name: PMA_PASSWORD
+          value: "rootpassword"
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 80
+          initialDelaySeconds: 60
+          periodSeconds: 30
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 80
+          initialDelaySeconds: 30
+          periodSeconds: 10
+
+---
+# phpMyAdmin Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: phpmyadmin
+  namespace: data-platform
+spec:
+  type: LoadBalancer
+  selector:
+    app: phpmyadmin
+  ports:
+  - port: 8081
+    targetPort: 80
+
+---
+# Redis Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis
+  namespace: data-platform
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis
+  template:
+    metadata:
+      labels:
+        app: redis
+    spec:
+      containers:
+      - name: redis
+        image: redis:7-alpine
+        ports:
+        - containerPort: 6379
+        command:
+        - redis-server
+        - --appendonly
+        - "yes"
+        - --requirepass
+        - redispassword
+        volumeMounts:
+        - name: redis-data
+          mountPath: /data
+        livenessProbe:
+          exec:
+            command:
+            - redis-cli
+            - -a
+            - redispassword
+            - ping
+          initialDelaySeconds: 30
+          periodSeconds: 30
+        readinessProbe:
+          exec:
+            command:
+            - redis-cli
+            - -a
+            - redispassword
+            - ping
+          initialDelaySeconds: 10
+          periodSeconds: 10
+      volumes:
+      - name: redis-data
+        persistentVolumeClaim:
+          claimName: redis-pvc
+
+---
+# Redis PVC
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: redis-pvc
+  namespace: data-platform
+spec:
+  accessModes:
+  - ReadWriteOnce
+  storageClassName: gp3
+  resources:
+    requests:
+      storage: 10Gi
+
+---
+# Redis Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis
+  namespace: data-platform
+spec:
+  selector:
+    app: redis
+  ports:
+  - port: 6379
+    targetPort: 6379
+
+---
+# Redis External Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis-external
+  namespace: data-platform
+spec:
+  type: LoadBalancer
+  selector:
+    app: redis
+  ports:
+  - port: 6379
+    targetPort: 6379
+
+---
+# Redis Commander Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis-commander
+  namespace: data-platform
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis-commander
+  template:
+    metadata:
+      labels:
+        app: redis-commander
+    spec:
+      containers:
+      - name: redis-commander
+        image: rediscommander/redis-commander:latest
+        ports:
+        - containerPort: 8081
+        env:
+        - name: REDIS_HOSTS
+          value: "local:redis:6379:0:redispassword"
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 8081
+          initialDelaySeconds: 60
+          periodSeconds: 30
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 8081
+          initialDelaySeconds: 30
+          periodSeconds: 10
+
+---
+# Redis Commander Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis-commander
+  namespace: data-platform
+spec:
+  type: LoadBalancer
+  selector:
+    app: redis-commander
+  ports:
+  - port: 8082
+    targetPort: 8081

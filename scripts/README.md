@@ -1,45 +1,62 @@
 # 📁 Scripts 目录结构说明
 
-## 🚀 scripts/start/ - 启动相关脚本
+## 📋 概览
 
-这个目录包含启动和基础操作相关的脚本：
+Scripts 目录包含了 Kubernetes 数据平台的辅助管理脚本。
 
-### 📋 文件列表
+> **注意**: 主要的部署和管理功能已经集成到了根目录的 `switch-env.sh` 和 `flink/deploy-k8s-complete.sh` 中。
 
-- **`start-all.sh`** - 🚀 启动完整的 Kafka + MySQL 开发环境
-- **`check-status.sh`** - � 检查所有服务状态  
-- **`test-kafka.sh`** - 🧪 测试 Kafka 连接和功能
+## 🛠️ scripts/helper/ - Kubernetes 辅助工具
+
+这个目录包含专门的 Kubernetes 管理工具脚本：
+
+### 📋 Headlamp Kubernetes 管理界面
+- **`deploy-headlamp-k8s.sh`** - ☸️ 部署 Headlamp 到 Kubernetes 集群
+- **`get-headlamp-token.sh`** - 🔑 获取 Headlamp 访问令牌
+- **`headlamp-access-options.sh`** - 🌐 显示 Headlamp 访问选项
+- **`verify-headlamp.sh`** - ✅ 验证 Headlamp 部署状态
+
+### 📋 AWS EMR + Flink 集群管理
+- **`manage-emr-flink.sh`** - 🌊 EMR on EKS + Flink 集群管理工具
 
 ### 🎯 使用方法
 
 ```bash
-# 启动所有服务
-./scripts/start/start-all.sh
+# 部署 Headlamp Kubernetes 管理界面
+./scripts/helper/deploy-headlamp-k8s.sh
 
-# 检查服务状态
-./scripts/start/check-status.sh
+# 获取 Headlamp 访问令牌
+./scripts/helper/get-headlamp-token.sh
 
-# 测试 Kafka 功能
-./scripts/start/test-kafka.sh
+# 管理 EMR Flink 集群
+./scripts/helper/manage-emr-flink.sh status
 ```
-
-## 🛠️ scripts/helper/ - 辅助工具脚本
-
-这个目录包含各种管理和辅助工具脚本：
-
-### 📋 MySQL 相关工具
-- **`manage-mysql.sh`** - 🗄️ MySQL 交互式管理工具
-- **`exec-sql.sh`** - 📄 执行 SQL 文件工具
-- **`add-mysql.sh`** - ➕ 向现有环境添加 MySQL 的向导
-
-### 📋 Headlamp 相关工具
-- **`deploy-headlamp-k8s.sh`** - ☸️ 部署 Headlamp 到 Kubernetes
-- **`get-headlamp-token.sh`** - 🔑 获取 Headlamp 访问令牌
-- 以及其他 Headlamp 管理脚本...
 
 ## 🗄️ mysql/init/ - MySQL 初始化脚本
 
-- **`01-init.sql`** - � 基础数据库和表创建
-- **`02-kafka-tables.sql`** - � Kafka 相关表创建
+数据库初始化脚本位于 `mysql/init/` 目录：
 
-这些脚本会在 MySQL 容器**首次启动**时按字母顺序自动执行。
+- **`01-init.sql`** - 📊 基础数据库和表创建
+- **`02-kafka-tables.sql`** - 📨 Kafka 相关表创建
+
+这些脚本会在 MySQL Pod **首次启动**时按字母顺序自动执行。
+
+## 🚀 主要工具对比
+
+| 功能                | 推荐工具                                  | 备用工具                                |
+| ------------------- | ----------------------------------------- | --------------------------------------- |
+| **平台部署**        | `./switch-env.sh deploy`                  | `./flink/deploy-k8s-complete.sh deploy` |
+| **状态查看**        | `./switch-env.sh status`                  | `kubectl get pods -n data-platform`     |
+| **端口转发**        | `./switch-env.sh port-forward`            | 手动 `kubectl port-forward`             |
+| **Kubernetes 管理** | `./scripts/helper/deploy-headlamp-k8s.sh` | `kubectl` 命令行                        |
+| **EMR 管理**        | `./scripts/helper/manage-emr-flink.sh`    | AWS 控制台                              |
+
+## 📚 相关文档
+
+- **[根目录 README.md](../README.md)** - 项目总览和快速开始
+- **[DATA_PLATFORM_GUIDE.md](../DATA_PLATFORM_GUIDE.md)** - 完整使用指南  
+- **[docs/](../docs/)** - 详细技术文档
+
+---
+
+💡 **提示**: 大部分日常操作建议使用根目录的主要脚本，这里的脚本主要用于特殊场景和高级管理。

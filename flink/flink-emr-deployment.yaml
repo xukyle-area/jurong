@@ -1,0 +1,176 @@
+apiVersion: flink.apache.org/v1beta1
+kind: FlinkDeployment
+metadata:
+  name: flink-session-emr
+  namespace: emr
+  annotations:
+    emr-containers.amazonaws.com/virtual-cluster-id: "${EMR_VIRTUAL_CLUSTER_ID}"
+spec:
+  image: flink:1.17.2-scala_2.12-java11
+  flinkVersion: v1_17
+  
+  # Flink 配置 - 适配 EMR on EKS
+  flinkConfiguration:
+    # 基础配置
+    taskmanager.numberOfTaskSlots: "4"
+    parallelism.default: "2"
+    
+    # 状态后端 - 使用 S3
+    state.backend: rocksdb
+    state.backend.rocksdb.localdir: /tmp/rocksdb
+    state.checkpoints.dir: s3://your-flink-bucket/checkpoints
+    state.savepoints.dir: s3://your-flink-bucket/savepoints
+    
+    # 检查点配置
+    execution.checkpointing.interval: 30s
+    execution.checkpointing.mode: EXACTLY_ONCE
+    execution.checkpointing.timeout: 10min
+    execution.checkpointing.max-concurrent-checkpoints: "1"
+    
+    # 重启策略
+    restart-strategy: exponential-delay
+    restart-strategy.exponential-delay.initial-backoff: 10s
+    restart-strategy.exponential-delay.max-backoff: 2min
+    restart-strategy.exponential-delay.backoff-multiplier: 2.0
+    restart-strategy.exponential-delay.reset-backoff-threshold: 10min
+    restart-strategy.exponential-delay.jitter-factor: 0.1
+    
+    # 网络配置
+    jobmanager.rpc.address: flink-session-emr-rest
+    blob.server.port: "6124"
+    queryable-state.server.ports: "6125"
+    
+    # Kubernetes 特定配置
+    kubernetes.operator.periodic.savepoint.interval: 6h
+    kubernetes.operator.savepoint.format.type: CANONICAL
+    
+    # EMR 集成配置
+    containerized.master.env.EMR_VIRTUAL_CLUSTER_ID: "${EMR_VIRTUAL_CLUSTER_ID}"
+    containerized.taskmanager.env.EMR_VIRTUAL_CLUSTER_ID: "${EMR_VIRTUAL_CLUSTER_ID}"
+
+  # ServiceAccount 配置 - EMR 权限
+  serviceAccount: emr-containers-sa-spark
+  
+  # JobManager 配置
+  jobManager:
+    replicas: 1
+    resource:
+      memory: "2048m"
+      cpu: 1
+      
+    # Pod 模板 - EMR on EKS 优化
+    podTemplate:
+      apiVersion: v1
+      kind: Pod
+      metadata:
+        annotations:
+          emr-containers.amazonaws.com/virtual-cluster-id: "${EMR_VIRTUAL_CLUSTER_ID}"
+      spec:
+        containers:
+        - name: flink-main-container
+          env:
+          - name: AWS_REGION
+            value: "us-west-2"
+          - name: EMR_VIRTUAL_CLUSTER_ID
+            value: "${EMR_VIRTUAL_CLUSTER_ID}"
+          volumeMounts:
+          - name: flink-logs
+            mountPath: /opt/flink/log
+        volumes:
+        - name: flink-logs
+          emptyDir: {}
+        serviceAccountName: emr-containers-sa-spark
+        nodeSelector:
+          kubernetes.io/arch: amd64
+
+  # TaskManager 配置  
+  taskManager:
+    replicas: 2
+    resource:
+      memory: "4096m" 
+      cpu: 2
+      
+    # Pod 模板
+    podTemplate:
+      apiVersion: v1
+      kind: Pod
+      metadata:
+        annotations:
+          emr-containers.amazonaws.com/virtual-cluster-id: "${EMR_VIRTUAL_CLUSTER_ID}"
+      spec:
+        containers:
+        - name: flink-main-container
+          env:
+          - name: AWS_REGION
+            value: "us-west-2"
+          - name: EMR_VIRTUAL_CLUSTER_ID
+            value: "${EMR_VIRTUAL_CLUSTER_ID}"
+          volumeMounts:
+          - name: flink-logs
+            mountPath: /opt/flink/log
+          - name: rocksdb-storage
+            mountPath: /tmp/rocksdb
+        volumes:
+        - name: flink-logs
+          emptyDir: {}
+        - name: rocksdb-storage
+          emptyDir:
+            sizeLimit: 10Gi
+        serviceAccountName: emr-containers-sa-spark
+        nodeSelector:
+          kubernetes.io/arch: amd64
+
+  # 入口配置 - ALB 集成  
+  ingress:
+    template: "flink-emr.your-domain.com/{{name}}(/|$)(.*)"
+    className: "alb"
+    annotations:
+      kubernetes.io/ingress.class: alb
+      alb.ingress.kubernetes.io/scheme: internet-facing
+      alb.ingress.kubernetes.io/target-type: ip
+      alb.ingress.kubernetes.io/healthcheck-path: /
+      nginx.ingress.kubernetes.io/rewrite-target: "/$2"
+
+---
+# Flink 应用作业配置
+apiVersion: flink.apache.org/v1beta1  
+kind: FlinkDeployment
+metadata:
+  name: kafka-processor-job
+  namespace: emr
+spec:
+  image: your-account.dkr.ecr.us-west-2.amazonaws.com/flink-kafka-processor:latest
+  flinkVersion: v1_17
+  
+  # 应用模式配置
+  mode: Application
+  
+  # 作业配置
+  job:
+    jarURI: local:///opt/flink/lib/kafka-processor.jar
+    entryClass: com.example.KafkaProcessorJob
+    args: ["--kafka.bootstrap.servers=kafka:9092"]
+    parallelism: 4
+    upgradeMode: savepoint
+    
+  # 继承基础配置
+  flinkConfiguration:
+    taskmanager.numberOfTaskSlots: "2"
+    parallelism.default: "4"
+    state.backend: rocksdb
+    state.checkpoints.dir: s3://your-flink-bucket/checkpoints/kafka-processor
+    execution.checkpointing.interval: 30s
+    
+  serviceAccount: emr-containers-sa-spark
+  
+  jobManager:
+    replicas: 1
+    resource:
+      memory: "1024m"
+      cpu: 0.5
+      
+  taskManager:
+    replicas: 2
+    resource:
+      memory: "2048m"
+      cpu: 1
