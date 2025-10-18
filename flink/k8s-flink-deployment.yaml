@@ -1,0 +1,153 @@
+---
+# Flink Kubernetes Operator 部署示例
+# 基于你的生产配置改编，适配本地 Kubernetes 环境
+
+apiVersion: flink.apache.org/v1beta1
+kind: FlinkDeployment
+metadata:
+  name: flink-streaming-job
+  namespace: infra
+  labels:
+    app: flink-streaming-job
+    env: local
+spec:
+  # Flink 版本配置
+  flinkVersion: v1_17
+  image: flink:1.17.2-scala_2.12-java8
+  
+  # Flink 集群配置
+  flinkConfiguration:
+    # 任务槽配置
+    taskmanager.numberOfTaskSlots: "2"
+    # 并行度配置
+    parallelism.default: "1"
+    # 检查点配置
+    state.checkpoints.dir: file:///tmp/flink-checkpoints
+    state.savepoints.dir: file:///tmp/flink-savepoints
+    # 重启策略
+    restart-strategy: fixed-delay
+    restart-strategy.fixed-delay.attempts: "3"
+    restart-strategy.fixed-delay.delay: "10 s"
+
+  # 作业配置
+  job:
+    # 入口类 - 需要替换为你的实际类
+    entryClass: com.example.StreamingJob
+    # JAR 文件路径 - 需要替换为你的实际 JAR
+    jarURI: local:///opt/flink/usrlib/streaming-job.jar
+    # 程序参数
+    args:
+      - "--kafka.bootstrap.servers"
+      - "kafka:9092"
+      - "--kafka.topic"
+      - "user-events"
+      - "--mysql.url"
+      - "jdbc:mysql://mysql:3306/streaming_db"
+    # 并行度
+    parallelism: 2
+    # 升级模式
+    upgradeMode: stateless
+    # 停止作业时创建保存点
+    savepointTriggerNonce: 0
+
+  # JobManager 配置
+  jobManager:
+    # 副本数（本地环境用 1 个）
+    replicas: 1
+    # 资源配置
+    resource:
+      memory: "1024m"
+      cpu: 1
+    # Pod 模板
+    podTemplate:
+      apiVersion: v1
+      kind: Pod
+      metadata:
+        labels:
+          app: flink-streaming-job
+          component: jobmanager
+      spec:
+        containers:
+        - name: flink-main-container
+          env:
+          - name: FLINK_PROPERTIES
+            value: |
+              jobmanager.rpc.address: flink-streaming-job-jobmanager
+              blob.server.port: 6124
+              jobmanager.rpc.port: 6123
+
+  # TaskManager 配置  
+  taskManager:
+    # 副本数
+    replicas: 2
+    # 资源配置
+    resource:
+      memory: "2048m"
+      cpu: 1
+    # Pod 模板
+    podTemplate:
+      apiVersion: v1
+      kind: Pod
+      metadata:
+        labels:
+          app: flink-streaming-job
+          component: taskmanager
+      spec:
+        containers:
+        - name: flink-main-container
+          env:
+          - name: FLINK_PROPERTIES
+            value: |
+              jobmanager.rpc.address: flink-streaming-job-jobmanager
+              taskmanager.numberOfTaskSlots: 2
+
+  # 服务配置
+  serviceAccount: default
+  
+  # Ingress 配置（可选）
+  ingress:
+    template: "flink-streaming-job.local.dev/{{name}}(/|$)(.*)"
+    className: "nginx"
+    annotations:
+      nginx.ingress.kubernetes.io/rewrite-target: "/$2"
+
+---
+# 用于对比的简单示例 - WordCount 作业
+apiVersion: flink.apache.org/v1beta1
+kind: FlinkDeployment
+metadata:
+  name: flink-wordcount
+  namespace: infra
+  labels:
+    app: flink-wordcount
+    env: local
+spec:
+  flinkVersion: v1_17
+  image: flink:1.17.2-scala_2.12-java8
+  
+  flinkConfiguration:
+    taskmanager.numberOfTaskSlots: "1"
+    parallelism.default: "1"
+
+  job:
+    entryClass: org.apache.flink.streaming.examples.wordcount.WordCount
+    jarURI: local:///opt/flink/examples/streaming/WordCount.jar
+    args:
+      - "--input"
+      - "/tmp/input.txt"  
+      - "--output"
+      - "/tmp/output"
+    parallelism: 1
+    upgradeMode: stateless
+
+  jobManager:
+    replicas: 1
+    resource:
+      memory: "512m"
+      cpu: 0.5
+
+  taskManager:
+    replicas: 1  
+    resource:
+      memory: "1024m"
+      cpu: 0.5
