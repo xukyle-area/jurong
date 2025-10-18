@@ -1,7 +1,13 @@
 #!/bin/bash
 
 echo "🚀 启动完整的 Kafka + MySQL 开发环境"
-echo "🔌 服务连接信息："
+echecho "🌐 服务访问地址："
+echo "=================================="
+echo "📊 Kafka UI:      http://localhost:8080"
+echo "🗄️  phpMyAdmin:    http://localhost:8081"
+echo "� Redis Commander: http://localhost:8082"
+echo "🌊 Flink Dashboard: http://localhost:8083"
+echo "📊 Headlamp (K8s): http://localhost:30466"服务连接信息："
 echo "=================================="
 echo "Kafka:            localhost:9092"
 echo "MySQL:            localhost:3306"

@@ -1,0 +1,95 @@
+# 基于你们生产环境的简化 Session 集群配置
+
+apiVersion: flink.apache.org/v1beta1
+kind: FlinkDeployment
+metadata:
+  name: flink-sessions-local
+  namespace: flink-local
+spec:
+  image: flink:1.17.2-scala_2.12-java8
+  flinkVersion: v1_17
+  
+  # 基础 Flink 配置 (简化版)
+  flinkConfiguration:
+    taskmanager.numberOfTaskSlots: "2"
+    parallelism.default: "1"
+    # 本地文件存储 (替代S3)
+    state.checkpoints.dir: file:///tmp/checkpoints
+    state.savepoints.dir: file:///tmp/savepoints
+    # 高可用 (本地测试用内存模式)
+    high-availability: org.apache.flink.kubernetes.highavailability.KubernetesHaServicesFactory
+    high-availability.storageDir: file:///tmp/ha-storage
+    # 执行配置
+    jobmanager.execution.failover-strategy: region
+    execution.checkpointing.interval: 60s
+    restart-strategy: fixed-delay
+    restart-strategy.fixed-delay.attempts: "3"
+    restart-strategy.fixed-delay.delay: 10s
+
+  # Ingress 配置 (本地测试)
+  ingress:
+    template: "flink-local.localhost/{{name}}(/|$)(.*)"
+    className: "nginx"
+    annotations:
+      nginx.ingress.kubernetes.io/rewrite-target: "/$2"
+
+  # JobManager 配置
+  jobManager:
+    replicas: 2  # 高可用，与生产环境一致
+    resource:
+      memory: "768m"
+      cpu: 0.3
+    highAvailabilityEnabled: true
+    
+    # Pod 模板 (简化版)
+    podTemplate:
+      apiVersion: v1
+      kind: Pod
+      spec:
+        containers:
+        - name: flink-main-container
+          env:
+          - name: FLINK_ENV
+            value: "local"
+          - name: FLINK_JOB_TYPE
+            value: "session"
+          volumeMounts:
+          - name: checkpoint-storage
+            mountPath: /tmp/checkpoints
+          - name: savepoint-storage
+            mountPath: /tmp/savepoints
+          - name: ha-storage
+            mountPath: /tmp/ha-storage
+        volumes:
+        - name: checkpoint-storage
+          emptyDir: {}
+        - name: savepoint-storage
+          emptyDir: {}
+        - name: ha-storage
+          emptyDir: {}
+
+  # TaskManager 配置
+  taskManager:
+    replicas: 2  # 与生产环境类似
+    resource:
+      memory: "1024m"
+      cpu: 0.1
+      
+    # Pod 模板 (简化版)
+    podTemplate:
+      apiVersion: v1
+      kind: Pod
+      spec:
+        containers:
+        - name: flink-main-container
+          env:
+          - name: FLINK_ENV
+            value: "local"
+          - name: FLINK_JOB_TYPE
+            value: "session"
+          volumeMounts:
+          - name: checkpoint-storage
+            mountPath: /tmp/checkpoints
+        volumes:
+        - name: checkpoint-storage
+          emptyDir: {}

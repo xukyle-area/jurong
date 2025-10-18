@@ -1,0 +1,76 @@
+# 基于你们架构的独立作业配置示例
+
+apiVersion: flink.apache.org/v1beta1
+kind: FlinkDeployment
+metadata:
+  name: flink-quote-demo
+  namespace: flink-local
+spec:
+  image: your-registry/flink-submitter:latest  # 你的应用镜像
+  flinkVersion: v1_17
+  
+  # Flink 配置
+  flinkConfiguration:
+    taskmanager.numberOfTaskSlots: "2"
+    parallelism.default: "2"
+    # 检查点配置
+    state.checkpoints.dir: file:///tmp/checkpoints
+    state.savepoints.dir: file:///tmp/savepoints
+    execution.checkpointing.interval: 60s
+    execution.checkpointing.mode: EXACTLY_ONCE
+    # 重启策略
+    restart-strategy: fixed-delay  
+    restart-strategy.fixed-delay.attempts: "3"
+    restart-strategy.fixed-delay.delay: 10s
+
+  # 作业配置
+  job:
+    jarURI: local:///opt/flink/usrlib/flink-submitter.jar
+    entryClass: com.tiger.exodus.flink.QuoteDemoJob  # 替换为你的主类
+    parallelism: 2
+    upgradeMode: stateless
+    
+  # JobManager 配置
+  jobManager:
+    resource:
+      memory: "1024m"
+      cpu: 0.5
+    podTemplate:
+      apiVersion: v1
+      kind: Pod
+      spec:
+        containers:
+        - name: flink-main-container
+          env:
+          - name: QUOTE_FLINK_ENV
+            value: "local"
+          - name: QUOTE_FLINK_NAME  
+            value: "demo"
+          - name: MYSQL_HOST
+            value: "mysql.flink-local.svc.cluster.local"
+          - name: REDIS_HOST
+            value: "redis.flink-local.svc.cluster.local"
+          - name: KAFKA_BOOTSTRAP_SERVERS
+            value: "kafka.flink-local.svc.cluster.local:9092"
+
+  # TaskManager 配置
+  taskManager:
+    replicas: 2
+    resource:
+      memory: "1024m"
+      cpu: 0.5
+    podTemplate:
+      apiVersion: v1
+      kind: Pod
+      spec:
+        containers:
+        - name: flink-main-container
+          env:
+          - name: QUOTE_FLINK_ENV
+            value: "local"
+          - name: MYSQL_HOST
+            value: "mysql.flink-local.svc.cluster.local"
+          - name: REDIS_HOST
+            value: "redis.flink-local.svc.cluster.local"
+          - name: KAFKA_BOOTSTRAP_SERVERS
+            value: "kafka.flink-local.svc.cluster.local:9092"
