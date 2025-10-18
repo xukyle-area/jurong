@@ -1,7 +1,17 @@
 #!/bin/bash
 
 echo "🚀 启动完整的 Kafka + MySQL 开发环境"
+echo "🔌 服务连接信息："
 echo "=================================="
+echo "Kafka:            localhost:9092"
+echo "MySQL:            localhost:3306"
+echo "  - 用户名:       root"
+echo "  - 密码:         rootpassword"
+echo "  - 应用数据库:   projects"
+echo "  - 应用用户:     appuser"
+echo "  - 应用密码:     apppassword"
+echo "Redis:            localhost:6379"
+echo "  - 密码:         redispassword"==============================="
 
 # 检查 Docker 是否运行
 if ! docker info > /dev/null 2>&1; then
@@ -43,7 +53,8 @@ echo "🌐 服务访问地址："
 echo "=================================="
 echo "📊 Kafka UI:      http://localhost:8080"
 echo "🗄️  phpMyAdmin:    http://localhost:8081"
-echo "📊 Headlamp (K8s): http://localhost:30466"
+echo "� Redis Commander: http://localhost:8082"
+echo "�📊 Headlamp (K8s): http://localhost:30466"
 echo ""
 echo "🔌 服务连接信息："
 echo "=================================="

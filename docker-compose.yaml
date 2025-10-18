@@ -83,9 +83,40 @@ services:
     networks:
       - kafka-network
 
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - kafka-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    command: redis-server --appendonly yes --requirepass redispassword
+
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: redis-commander
+    ports:
+      - "8082:8081"
+    environment:
+      REDIS_HOSTS: local:redis:6379:0:redispassword
+    depends_on:
+      - redis
+    networks:
+      - kafka-network
+    restart: unless-stopped
+
 volumes:
   kafka-data:
   mysql-data:
+  redis-data:
 
 networks:
   kafka-network:
