@@ -1,43 +1,45 @@
-# Scripts 目录
+# 📁 Scripts 目录结构说明
 
-这个目录包含了本项目的所有脚本文件，用于部署和管理 Kafka 和 Headlamp 服务。
+## 🚀 scripts/start/ - 启动相关脚本
 
-## 📁 脚本分类
+这个目录包含启动和基础操作相关的脚本：
 
-### Kafka 相关脚本
-- **`test-kafka.sh`** - 测试 Kafka 部署和功能
+### 📋 文件列表
 
-### Headlamp 相关脚本
-- **`deploy-headlamp-k8s.sh`** - 在 Kubernetes 中部署 Headlamp
-- **`start-headlamp.sh`** - 使用 Docker Compose 启动 Headlamp
-- **`verify-headlamp.sh`** - 验证 Headlamp 部署状态
-- **`fix-headlamp.sh`** - 修复 Headlamp 网络连接问题
-- **`final-headlamp-fix.sh`** - 最终解决方案脚本
-- **`test-headlamp-connection.sh`** - 测试 Headlamp 连接
-- **`headlamp-access-options.sh`** - 展示所有 Headlamp 访问方式
+- **`start-all.sh`** - 🚀 启动完整的 Kafka + MySQL 开发环境
+- **`check-status.sh`** - � 检查所有服务状态  
+- **`test-kafka.sh`** - 🧪 测试 Kafka 连接和功能
 
-### Token 相关脚本
-- **`get-headlamp-token.sh`** - 获取 Headlamp 登录令牌
-- **`generate-clean-token.sh`** - 生成干净的管理员令牌
-- **`clean-token.sh`** - 生成绝对干净的令牌
-
-## 🚀 使用方法
-
-所有脚本都可以直接执行：
+### 🎯 使用方法
 
 ```bash
-# 例如，测试 Kafka
-./scripts/test-kafka.sh
+# 启动所有服务
+./scripts/start/start-all.sh
 
-# 部署 Headlamp
-./scripts/deploy-headlamp-k8s.sh
+# 检查服务状态
+./scripts/start/check-status.sh
 
-# 获取登录令牌
-./scripts/generate-clean-token.sh
+# 测试 Kafka 功能
+./scripts/start/test-kafka.sh
 ```
 
-## 💡 提示
+## 🛠️ scripts/helper/ - 辅助工具脚本
 
-- 所有脚本都有执行权限
-- 脚本会提供详细的输出和说明
-- 如果遇到权限问题，使用 `chmod +x scripts/*.sh` 重新设置权限
+这个目录包含各种管理和辅助工具脚本：
+
+### 📋 MySQL 相关工具
+- **`manage-mysql.sh`** - 🗄️ MySQL 交互式管理工具
+- **`exec-sql.sh`** - 📄 执行 SQL 文件工具
+- **`add-mysql.sh`** - ➕ 向现有环境添加 MySQL 的向导
+
+### 📋 Headlamp 相关工具
+- **`deploy-headlamp-k8s.sh`** - ☸️ 部署 Headlamp 到 Kubernetes
+- **`get-headlamp-token.sh`** - 🔑 获取 Headlamp 访问令牌
+- 以及其他 Headlamp 管理脚本...
+
+## 🗄️ mysql/init/ - MySQL 初始化脚本
+
+- **`01-init.sql`** - � 基础数据库和表创建
+- **`02-kafka-tables.sql`** - � Kafka 相关表创建
+
+这些脚本会在 MySQL 容器**首次启动**时按字母顺序自动执行。
