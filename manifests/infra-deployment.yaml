@@ -8,122 +8,6 @@ metadata:
     name: infra
 
 ---
-# ConfigMap for MySQL initialization scripts
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: mysql-init-scripts
-  namespace: infra
-data:
-  01-init.sql: |
-    -- MySQL 初始化脚本
-    -- 创建应用数据库和示例表
-    
-    CREATE DATABASE IF NOT EXISTS projects;
-    USE projects;
-    
-    -- 用户表
-    CREATE TABLE users (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        username VARCHAR(50) NOT NULL UNIQUE,
-        email VARCHAR(100) NOT NULL,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-    );
-    
-    -- 产品表
-    CREATE TABLE products (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        name VARCHAR(100) NOT NULL,
-        description TEXT,
-        price DECIMAL(10,2),
-        stock INT DEFAULT 0,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    );
-    
-    -- 订单表
-    CREATE TABLE orders (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        user_id INT,
-        total_amount DECIMAL(10,2),
-        status ENUM('pending', 'processing', 'completed', 'cancelled') DEFAULT 'pending',
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (user_id) REFERENCES users(id)
-    );
-    
-    -- 插入示例数据
-    INSERT INTO users (username, email) VALUES
-    ('admin', 'admin@example.com'),
-    ('john_doe', 'john@example.com'),
-    ('jane_smith', 'jane@example.com');
-    
-    INSERT INTO products (name, description, price, stock) VALUES
-    ('笔记本电脑', '高性能办公笔记本', 5999.00, 50),
-    ('无线鼠标', '蓝牙无线鼠标', 99.00, 200),
-    ('机械键盘', 'RGB背光机械键盘', 299.00, 100);
-    
-    INSERT INTO orders (user_id, total_amount, status) VALUES
-    (2, 6098.00, 'completed'),
-    (3, 398.00, 'processing');
-    
-    -- 创建索引
-    CREATE INDEX idx_users_email ON users(email);
-    CREATE INDEX idx_orders_user_id ON orders(user_id);
-    CREATE INDEX idx_orders_status ON orders(status);
-
-  02-kafka-tables.sql: |
-    -- 创建 Kafka 相关的数据表
-    -- 用于存储 Kafka 消息处理的状态信息
-    
-    USE projects;
-    
-    -- Kafka 主题元数据表
-    CREATE TABLE kafka_topics (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        topic_name VARCHAR(100) NOT NULL UNIQUE,
-        partition_count INT DEFAULT 1,
-        replication_factor INT DEFAULT 1,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    );
-    
-    -- Kafka 消息处理状态表
-    CREATE TABLE kafka_message_status (
-        id BIGINT AUTO_INCREMENT PRIMARY KEY,
-        topic VARCHAR(100) NOT NULL,
-        partition_id INT NOT NULL,
-        offset_value BIGINT NOT NULL,
-        message_key VARCHAR(255),
-        processed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        status ENUM('pending', 'processed', 'failed') DEFAULT 'pending',
-        retry_count INT DEFAULT 0,
-        error_message TEXT
-    );
-    
-    -- 用户活动日志表（接收来自 Kafka 的事件）
-    CREATE TABLE user_activities (
-        id BIGINT AUTO_INCREMENT PRIMARY KEY,
-        user_id INT,
-        activity_type VARCHAR(50),
-        activity_data JSON,
-        source_topic VARCHAR(100),
-        kafka_offset BIGINT,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (user_id) REFERENCES users(id)
-    );
-    
-    -- 插入示例 Kafka 主题
-    INSERT INTO kafka_topics (topic_name, partition_count) VALUES
-    ('user-events', 3),
-    ('order-events', 2),
-    ('product-updates', 1);
-    
-    -- 创建索引
-    CREATE INDEX idx_kafka_message_status_topic_partition ON kafka_message_status(topic, partition_id);
-    CREATE INDEX idx_kafka_message_status_offset ON kafka_message_status(offset_value);
-    CREATE INDEX idx_user_activities_user_id ON user_activities(user_id);
-    CREATE INDEX idx_user_activities_type ON user_activities(activity_type);
-
----
 # ZooKeeper StatefulSet
 apiVersion: apps/v1
 kind: StatefulSet
@@ -427,8 +311,9 @@ spec:
         persistentVolumeClaim:
           claimName: mysql-pvc
       - name: mysql-init
-        configMap:
-          name: mysql-init-scripts
+        hostPath:
+          path: /Users/ganten/workspace/github/jurong/mysql/init
+          type: Directory
 
 ---
 # MySQL PVC
