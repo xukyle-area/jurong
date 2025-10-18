@@ -51,7 +51,7 @@ deploy_infrastructure() {
     PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
     
     echo "部署基础设施服务: MySQL, Redis, ZooKeeper, Kafka, 管理界面..."
-    kubectl apply -f "$PROJECT_ROOT/flink/k8s-complete-stack.yaml"
+    kubectl apply -f "$PROJECT_ROOT/manifests/infra-deployment.yaml"
     
     echo "⏳ 等待基础设施服务启动..."
     
@@ -88,7 +88,7 @@ deploy_flink() {
     SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
     PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
     
-    kubectl apply -f "$PROJECT_ROOT/flink/k8s-flink.yaml"
+    kubectl apply -f "$PROJECT_ROOT/manifests/flink-session-deployment.yaml"
     
     echo "⏳ 等待流计算服务启动..."
     
@@ -147,7 +147,6 @@ get_service_info() {
     echo "kubectl port-forward -n infra svc/kafka-ui 8080:8080"
     echo "kubectl port-forward -n infra svc/phpmyadmin 8081:8081"
     echo "kubectl port-forward -n infra svc/redis-commander 8082:8082"
-    echo "kubectl port-forward -n infra svc/headlamp 4466:4466"
     echo "kubectl port-forward -n infra svc/flink-jobmanager-ui 8083:8083"
     echo "kubectl port-forward -n infra svc/kafka-external 9092:9092"
     echo "kubectl port-forward -n infra svc/mysql-external 3306:3306"
@@ -259,7 +258,6 @@ main() {
             echo "  - 消息队列: Kafka + ZooKeeper + Kafka UI"
             echo "  - 数据库: MySQL + phpMyAdmin"
             echo "  - 缓存: Redis + Redis Commander"
-            echo "  - 集群管理: Headlamp (Kubernetes Dashboard)"
             echo "  - 流计算: Apache Flink (JobManager + TaskManager)"
             echo ""
             echo "🌐 外部访问通过 LoadBalancer 或端口转发"
