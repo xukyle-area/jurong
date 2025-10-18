@@ -177,7 +177,7 @@ spec:
       name: zookeeper-data
     spec:
       accessModes: ["ReadWriteOnce"]
-      storageClassName: gp3
+      storageClassName: hostpath
       resources:
         requests:
           storage: 10Gi
@@ -185,7 +185,7 @@ spec:
       name: zookeeper-logs
     spec:
       accessModes: ["ReadWriteOnce"]
-      storageClassName: gp3
+      storageClassName: hostpath
       resources:
         requests:
           storage: 5Gi
@@ -275,7 +275,7 @@ spec:
       name: kafka-data
     spec:
       accessModes: ["ReadWriteOnce"]
-      storageClassName: gp3
+      storageClassName: hostpath
       resources:
         requests:
           storage: 50Gi
@@ -439,7 +439,7 @@ metadata:
 spec:
   accessModes:
   - ReadWriteOnce
-  storageClassName: gp3
+  storageClassName: hostpath
   resources:
     requests:
       storage: 20Gi
@@ -594,7 +594,7 @@ metadata:
 spec:
   accessModes:
   - ReadWriteOnce
-  storageClassName: gp3
+  storageClassName: hostpath
   resources:
     requests:
       storage: 10Gi
@@ -680,3 +680,62 @@ spec:
   ports:
   - port: 8082
     targetPort: 8081
+
+---
+# Headlamp Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: headlamp
+  namespace: infra
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: headlamp
+  template:
+    metadata:
+      labels:
+        app: headlamp
+    spec:
+      containers:
+      - name: headlamp
+        image: headlampk8s/headlamp:latest
+        ports:
+        - containerPort: 4466
+        env:
+        - name: HEADLAMP_CONFIG_DIR
+          value: "/headlamp-data"
+        volumeMounts:
+        - name: headlamp-data
+          mountPath: /headlamp-data
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 4466
+          initialDelaySeconds: 60
+          periodSeconds: 30
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 4466
+          initialDelaySeconds: 30
+          periodSeconds: 10
+      volumes:
+      - name: headlamp-data
+        emptyDir: {}
+
+---
+# Headlamp Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: headlamp
+  namespace: infra
+spec:
+  type: LoadBalancer
+  selector:
+    app: headlamp
+  ports:
+  - port: 4466
+    targetPort: 4466
