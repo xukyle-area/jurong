@@ -24,28 +24,128 @@
 - SQL 文件初始化 MySQL（无需 ConfigMap）
 
 ## 快速开始
-1. 编辑 `mysql-init/` 下 SQL 文件，定义表结构和初始化数据。
-2. 部署基础设施：
-  ```sh
-  kubectl apply -f manifests/infra-deployment.yaml
-  kubectl apply -f deployments/kafka-deployment.yaml
-  ```
-3. 启动所有服务：
-  ```sh
-  bash scripts/start-infra-and-session.sh
-  ```
-4. 访问服务界面：
-  - Kafka UI: http://localhost:8080
-  - phpMyAdmin: http://localhost:8081
-  - Redis Commander: http://localhost:8082
-  - Flink Web UI: http://localhost:8083
-#
+
+### 1. 环境准备
+确保已安装并启动以下环境：
+```bash
+# 1. 安装 Docker Desktop
+# 下载地址: https://www.docker.com/products/docker-desktop
+
+# 2. 启动 Kubernetes 集群
+# 在 Docker Desktop 中启用 Kubernetes
+# 或者使用 minikube:
+minikube start
+
+# 3. 验证 Kubernetes 集群
+kubectl cluster-info
+kubectl get nodes
+```
+
+### 2. 初始化数据库
+编辑 `mysql-init/` 下 SQL 文件，定义表结构和初始化数据。
+
+### 3. 部署基础设施
+```sh
+kubectl apply -f manifests/infra-deployment.yaml
+kubectl apply -f deployments/kafka-deployment.yaml
+```
+
+### 4. 启动所有服务
+```sh
+bash scripts/start-infra-and-session.sh
+```
+
+### 5. 访问服务界面
+- Kafka UI: http://localhost:8080
+- phpMyAdmin: http://localhost:8081
+- Redis Commander: http://localhost:8082
+- Flink Web UI: http://localhost:8083
 ## 维护与扩展
 
 - 修改数据库结构或数据，直接编辑 `mysql-init/` 下 SQL 文件，重启 MySQL Pod 即可。
 - 其他服务配置请参考对应 YAML 文件。
 - Kafka、Redis、Flink 等服务如需扩展或自定义，可修改对应 manifests 或 deployments 下的 YAML 文件。
 - 推荐使用 Git 进行版本管理，方便团队协作和回滚。
+
+## kubectl 常用命令
+
+### 基础操作
+```bash
+# 查看集群信息
+kubectl cluster-info
+
+# 查看所有节点
+kubectl get nodes
+
+# 查看所有命名空间
+kubectl get namespaces
+
+# 查看指定命名空间的所有资源
+kubectl get all -n infra
+```
+
+### Pod 管理
+```bash
+# 查看所有 Pod
+kubectl get pods -A
+
+# 查看指定命名空间的 Pod
+kubectl get pods -n infra
+
+# 查看 Pod 详细信息
+kubectl describe pod <pod-name> -n infra
+
+# 查看 Pod 日志
+kubectl logs <pod-name> -n infra
+
+# 实时查看 Pod 日志
+kubectl logs -f <pod-name> -n infra
+
+# 进入 Pod 容器
+kubectl exec -it <pod-name> -n infra -- /bin/bash
+```
+
+### 服务管理
+```bash
+# 查看所有服务
+kubectl get svc -A
+
+# 端口转发访问服务
+kubectl port-forward -n infra svc/<service-name> <本地端口>:<服务端口>
+
+# 例如：访问 Kafka UI
+kubectl port-forward -n infra svc/kafka-ui 8080:8080
+```
+
+### 资源监控
+```bash
+# 查看资源使用情况
+kubectl top nodes
+kubectl top pods -n infra
+
+# 查看持久卷
+kubectl get pv
+kubectl get pvc -n infra
+
+# 查看配置和密钥
+kubectl get configmap -n infra
+kubectl get secret -n infra
+```
+
+### 故障排除
+```bash
+# 查看事件（排查问题）
+kubectl get events -n infra --sort-by='.lastTimestamp'
+
+# 重启部署
+kubectl rollout restart deployment/<deployment-name> -n infra
+
+# 扩缩容
+kubectl scale deployment/<deployment-name> --replicas=3 -n infra
+
+# 删除资源
+kubectl delete pod <pod-name> -n infra
+```
 
 ## 常见问题
 
