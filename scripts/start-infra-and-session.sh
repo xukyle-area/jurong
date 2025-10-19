@@ -324,6 +324,98 @@ cleanup() {
     fi
 }
 
+
+# 重启 MySQL 并执行 SQL 文件
+restart_mysql_and_execute_sql() {
+    echo "🔄 重启 MySQL 并执行 SQL 文件..."
+    
+    # 获取脚本所在目录的绝对路径
+    SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+    PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+    SQL_DIR="$PROJECT_ROOT/mysql-init"
+    
+    # 检查 SQL 目录是否存在
+    if [ ! -d "$SQL_DIR" ]; then
+        echo "❌ SQL 初始化目录不存在: $SQL_DIR"
+        return 1
+    fi
+    
+    # 检查是否有 SQL 文件
+    sql_files=("$SQL_DIR"/*.sql)
+    if [ ! -f "${sql_files[0]}" ]; then
+        echo "❌ 在 $SQL_DIR 中未找到 .sql 文件"
+        return 1
+    fi
+    
+    echo "📁 发现以下 SQL 文件:"
+    for file in "${sql_files[@]}"; do
+        if [ -f "$file" ]; then
+            echo "   - $(basename "$file")"
+        fi
+    done
+    
+    # 删除现有的 MySQL Pod
+    echo "🗑️ 删除现有的 MySQL Pod..."
+    kubectl delete pod -n infra -l app=mysql --ignore-not-found=true
+    
+    # 等待新的 MySQL Pod 启动并就绪
+    echo "⏳ 等待新的 MySQL Pod 启动..."
+    kubectl wait --for=condition=ready pod -l app=mysql -n infra --timeout=120s
+    
+    if [ $? -eq 0 ]; then
+        echo "✅ MySQL Pod 已就绪"
+        
+        # 获取 MySQL Pod 名称
+        mysql_pod=$(kubectl get pods -n infra -l app=mysql --field-selector=status.phase=Running -o jsonpath='{.items[0].metadata.name}')
+        
+        if [ -z "$mysql_pod" ]; then
+            echo "❌ 无法找到运行中的 MySQL Pod"
+            return 1
+        fi
+        
+        echo "🎯 目标 MySQL Pod: $mysql_pod"
+        
+        # 等待 MySQL 服务完全启动
+        echo "⏳ 等待 MySQL 服务完全启动..."
+        sleep 10
+        
+        # 删除现有的 raffles 数据库（如果存在）
+        echo "🗑️ 删除现有的 raffles 数据库..."
+        kubectl exec -n infra -it "$mysql_pod" -- mysql -u root -prootpassword -e "DROP DATABASE IF EXISTS raffles;" 2>/dev/null || true
+        
+        # 执行所有 SQL 文件
+        for sql_file in "${sql_files[@]}"; do
+            if [ -f "$sql_file" ]; then
+                echo "📝 执行 SQL 文件: $(basename "$sql_file")"
+                
+                if kubectl exec -n infra -i "$mysql_pod" -- mysql -u root -prootpassword < "$sql_file"; then
+                    echo "✅ $(basename "$sql_file") 执行成功"
+                else
+                    echo "❌ $(basename "$sql_file") 执行失败"
+                    return 1
+                fi
+            fi
+        done
+        
+        # 验证数据库和表是否创建成功
+        echo "🔍 验证数据库和表..."
+        echo "数据库列表:"
+        kubectl exec -n infra -it "$mysql_pod" -- mysql -u root -prootpassword -e "SHOW DATABASES;" 2>/dev/null | grep -v "Warning"
+        
+        echo ""
+        echo "raffles 数据库中的表:"
+        kubectl exec -n infra -it "$mysql_pod" -- mysql -u root -prootpassword -D raffles -e "SHOW TABLES;" 2>/dev/null | grep -v "Warning"
+        
+        echo ""
+        echo "✅ MySQL 重启并 SQL 执行完成!"
+        
+    else
+        echo "❌ MySQL Pod 启动超时"
+        return 1
+    fi
+}
+
+
 # 主菜单
 main() {
     case "${1:-help}" in
@@ -371,6 +463,9 @@ main() {
         "cleanup")
             cleanup
             ;;
+        "mysql-restart")
+            restart_mysql_and_execute_sql
+            ;;
         "help"|*)
             echo "🚀 Kubernetes 基础设施平台部署工具"
             echo "============================="
@@ -387,6 +482,7 @@ main() {
             echo "  status         - 查看部署状态"
             echo "  info           - 查看服务访问信息"
             echo "  cleanup        - 清理所有资源"
+            echo "  mysql-restart  - 重启 MySQL 并执行 mysql-init/*.sql 文件"
             echo ""
             echo "📊 基础设施服务栈:"
             echo "  - 消息队列: Kafka + ZooKeeper + Kafka UI"
