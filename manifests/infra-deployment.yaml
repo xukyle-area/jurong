@@ -312,7 +312,7 @@ spec:
           claimName: mysql-pvc
       - name: mysql-init
         hostPath:
-          path: /Users/ganten/workspace/github/jurong/mysql/init
+          path: /Users/ganten/workspace/github/jurong/mysql-init
           type: Directory
 
 ---
