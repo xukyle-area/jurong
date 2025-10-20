@@ -138,9 +138,8 @@ create_kafka_topics() {
     sleep 30
     
     # 创建主题
-    kubectl exec -n infra statefulset/kafka -- kafka-topics --create --bootstrap-server localhost:9092 --topic user-events --partitions 3 --replication-factor 1 --if-not-exists
-    kubectl exec -n infra statefulset/kafka -- kafka-topics --create --bootstrap-server localhost:9092 --topic order-events --partitions 2 --replication-factor 1 --if-not-exists
-    kubectl exec -n infra statefulset/kafka -- kafka-topics --create --bootstrap-server localhost:9092 --topic product-updates --partitions 1 --replication-factor 1 --if-not-exists
+    kubectl exec -n infra statefulset/kafka -- kafka-topics --create --bootstrap-server localhost:9092 --topic calculate-input --partitions 3 --replication-factor 1 --if-not-exists
+    kubectl exec -n infra statefulset/kafka -- kafka-topics --create --bootstrap-server localhost:9092 --topic calculate-output --partitions 2 --replication-factor 1 --if-not-exists
     
     echo "📋 Kafka 主题列表:"
     kubectl exec -n infra statefulset/kafka -- kafka-topics --list --bootstrap-server localhost:9092

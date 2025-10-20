@@ -76,7 +76,7 @@ metadata:
   name: flink-jobmanager
   namespace: infra
 spec:
-  type: ClusterIP
+  type: NodePort
   ports:
   - name: rpc
     port: 6123
@@ -84,6 +84,8 @@ spec:
     port: 6124
   - name: webui
     port: 8081
+    targetPort: 8081
+    nodePort: 30081  # 固定的外部端口
   selector:
     app: flink
     component: jobmanager
