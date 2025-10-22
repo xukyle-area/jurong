@@ -27,3 +27,27 @@ kubectl describe pod <pod-id> -n app
 kubectl describe pod tethys-65bb74bcfb-bdgn9 -n app
 
 ```
+
+删除 cassandra 的流程
+
+```
+kubectl get pods -n infra | grep cassandra
+
+kubectl get statefulsets,deployments -n infra
+
+kubectl get statefulset cassandra -n infra -o yaml
+
+kubectl get services -n infra | grep cassandra
+
+kubectl get pvc -n infra | grep cassandra
+
+kubectl delete statefulset cassandra -n infra
+
+kubectl delete service cassandra-service -n infra
+
+kubectl delete pvc cassandra-data-cassandra-0 -n infra
+
+kubectl get all,pvc -n infra | grep cassandra
+
+kubectl get pods -n infra | grep cassandra
+```
