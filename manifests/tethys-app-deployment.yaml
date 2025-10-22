@@ -6,21 +6,21 @@ metadata:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: raffles
+  name: tethys
   namespace: app
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: raffles
+      app: tethys
   template:
     metadata:
       labels:
-        app: raffles
+        app: tethys
     spec:
       containers:
-      - name: raffles
-        image: raffles:latest
+      - name: tethys
+        image: tethys:latest
         imagePullPolicy: Never
         ports:
         - containerPort: 18080
@@ -54,13 +54,13 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: raffles-service
+  name: tethys-service
   namespace: app
 spec:
   selector:
-    app: raffles
+    app: tethys
   ports:
     - protocol: TCP
       port: 18080
       targetPort: 18080
-  type: LoadBalancer  # 或者使用 ClusterIP
+  type: LoadBalancer
