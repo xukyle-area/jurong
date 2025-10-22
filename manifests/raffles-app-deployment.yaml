@@ -6,21 +6,21 @@ metadata:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: tethys
+  name: raffles
   namespace: app
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: tethys
+      app: raffles
   template:
     metadata:
       labels:
-        app: tethys
+        app: raffles
     spec:
       containers:
-      - name: tethys
-        image: tethys:latest
+      - name: raffles
+        image: raffles:latest
         imagePullPolicy: Never
         ports:
         - containerPort: 18080
@@ -33,6 +33,12 @@ spec:
           value: "root"
         - name: MYSQL_PASSWORD
           value: "rootpassword"
+        - name: FLINK_HOST
+          value: "flink-jobmanager.infra.svc.cluster.local"
+        - name: FLINK_REST_PORT
+          value: "8081"
+        - name: FLINK_RPC_PORT
+          value: "6123"
         - name: KAFKA_HOST
           value: "kafka.infra.svc.cluster.local"
         - name: KAFKA_PORT
@@ -48,13 +54,13 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: tethys-service
+  name: raffles-service
   namespace: app
 spec:
   selector:
-    app: tethys
+    app: raffles
   ports:
     - protocol: TCP
-      port: 19080
+      port: 18080
       targetPort: 18080
-  type: LoadBalancer
+  type: LoadBalancer  # 或者使用 ClusterIP
