@@ -78,6 +78,9 @@ deploy_infrastructure() {
     SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
     PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
     
+    echo "🗑️ 删除现有的 StatefulSet 以确保配置更新..."
+    kubectl delete statefulset zookeeper kafka -n infra --ignore-not-found=true
+    
     echo "部署基础设施服务: MySQL, Redis, ZooKeeper, Kafka, 管理界面..."
     kubectl apply -f "$PROJECT_ROOT/manifests/infra-deployment.yaml"
     
@@ -127,23 +130,6 @@ deploy_flink() {
     kubectl wait --for=condition=available --timeout=300s deployment/flink-taskmanager -n infra
     
     echo "✅ 流计算服务部署完成"
-}
-
-# 创建 Kafka 主题
-create_kafka_topics() {
-    echo "📨 创建 Kafka 主题..."
-    
-    # 等待 Kafka 完全启动
-    sleep 30
-    
-    # 创建主题
-    kubectl exec -n infra statefulset/kafka -- kafka-topics --create --bootstrap-server localhost:9092 --topic calculate-input --partitions 3 --replication-factor 1 --if-not-exists
-    kubectl exec -n infra statefulset/kafka -- kafka-topics --create --bootstrap-server localhost:9092 --topic calculate-output --partitions 2 --replication-factor 1 --if-not-exists
-    
-    echo "📋 Kafka 主题列表:"
-    kubectl exec -n infra statefulset/kafka -- kafka-topics --list --bootstrap-server localhost:9092
-    
-    echo "✅ Kafka 主题创建完成"
 }
 
 # 重启 MySQL 并执行 SQL 文件
@@ -245,57 +231,11 @@ main() {
             create_namespace
             deploy_infrastructure
             deploy_flink
-            create_kafka_topics
             get_service_info
             verify_deployment
-            ;;
-        "infrastructure")
-            check_prerequisites
-            create_namespace
-            deploy_infrastructure
-            ;;
-        "streaming"|"flink")
-            deploy_flink
-            ;;
-        "topics")
-            create_kafka_topics
-            ;;
-        "status")
-            verify_deployment
-            ;;
-        "info")
-            get_service_info
-            ;;
-        "cleanup")
-            cleanup
             ;;
         "mysql-restart")
             restart_mysql_and_execute_sql
-            ;;
-        "help"|*)
-            echo "🚀 Kubernetes 基础设施平台部署工具"
-            echo "============================="
-            echo ""
-            echo "使用方法: $0 <command>"
-            echo ""
-            echo "命令:"
-            echo "  deploy         - 完整部署基础设施平台 (推荐)"
-            echo "  infrastructure - 仅部署基础设施 (数据库、消息队列、缓存)"
-            echo "  streaming      - 仅部署流计算服务 (Apache Flink)"
-            echo "  topics         - 创建 Kafka 主题"
-            echo "  status         - 查看部署状态"
-            echo "  info           - 查看服务访问信息"
-            echo "  cleanup        - 清理所有资源"
-            echo "  mysql-restart  - 重启 MySQL 并执行 mysql-init/*.sql 文件"
-            echo ""
-            echo "📊 基础设施服务栈:"
-            echo "  - 消息队列: Kafka + ZooKeeper + Kafka UI"
-            echo "  - 关系数据库: MySQL + phpMyAdmin"
-            echo "  - NoSQL 数据库"
-            echo "  - 缓存: Redis + Redis Commander"
-            echo "  - 流计算: Apache Flink (JobManager + TaskManager)"
-            echo ""
-            echo "🌐 外部访问通过 LoadBalancer 或端口转发"
             ;;
     esac
 }
