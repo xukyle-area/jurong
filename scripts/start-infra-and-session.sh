@@ -41,7 +41,6 @@ pull_images() {
         "phpmyadmin/phpmyadmin:latest"
         "redis:7-alpine"
         "rediscommander/redis-commander:latest"
-        "cassandra:3.11.16"
         "flink:1.17"
     )
     
@@ -147,78 +146,6 @@ create_kafka_topics() {
     echo "✅ Kafka 主题创建完成"
 }
 
-# 初始化 Cassandra Keyspace 和表
-init_cassandra() {
-    echo "🗄️ 初始化 Cassandra..."
-    
-    # 等待 Cassandra Pod 启动
-    echo "等待 Cassandra Pod 启动..."
-    kubectl wait --for=condition=ready pod -l app=cassandra -n infra --timeout=300s || {
-        echo "❌ Cassandra Pod 启动超时"
-        return 1
-    }
-    
-    # 等待 Cassandra 服务就绪
-    echo "等待 Cassandra 服务就绪..."
-    local max_attempts=30
-    local attempt=1
-    
-    while [ $attempt -le $max_attempts ]; do
-        echo "尝试连接 Cassandra (第 $attempt/$max_attempts 次)..."
-        if kubectl exec -n infra statefulset/cassandra -- timeout 10 cqlsh -e "SELECT now() FROM system.local;" > /dev/null 2>&1; then
-            echo "✅ Cassandra 连接成功"
-            break
-        fi
-        
-        if [ $attempt -eq $max_attempts ]; then
-            echo "❌ Cassandra 连接失败，请检查日志: kubectl logs -n infra cassandra-0"
-            return 1
-        fi
-        
-        sleep 10
-        attempt=$((attempt + 1))
-    done
-    
-    # 创建 keyspace 和表
-    kubectl exec -n infra statefulset/cassandra -- cqlsh -e "
-    CREATE KEYSPACE IF NOT EXISTS jurong_keyspace 
-    WITH REPLICATION = {
-        'class' : 'SimpleStrategy',
-        'replication_factor' : 1
-    };
-    
-    USE jurong_keyspace;
-    
-    CREATE TABLE IF NOT EXISTS users (
-        user_id UUID PRIMARY KEY,
-        username TEXT,
-        email TEXT,
-        created_at TIMESTAMP,
-        updated_at TIMESTAMP
-    );
-    
-    CREATE TABLE IF NOT EXISTS events (
-        event_id UUID,
-        user_id UUID,
-        event_type TEXT,
-        event_data TEXT,
-        timestamp TIMESTAMP,
-        PRIMARY KEY (event_id, timestamp)
-    ) WITH CLUSTERING ORDER BY (timestamp DESC);
-    
-    INSERT INTO users (user_id, username, email, created_at, updated_at) 
-    VALUES (uuid(), 'admin', 'admin@jurong.com', toTimestamp(now()), toTimestamp(now()));
-    "
-    
-    echo "📋 Cassandra Keyspace 信息:"
-    kubectl exec -n infra statefulset/cassandra -- cqlsh -e "DESCRIBE KEYSPACES;"
-    
-    echo "📋 Cassandra 表信息:"
-    kubectl exec -n infra statefulset/cassandra -- cqlsh -e "USE jurong_keyspace; DESCRIBE TABLES;"
-    
-    echo "✅ Cassandra 初始化完成"
-}
-
 # 重启 MySQL 并执行 SQL 文件
 restart_mysql_and_execute_sql() {
     echo "🔄 重启 MySQL 并执行 SQL 文件..."
@@ -319,7 +246,6 @@ main() {
             deploy_infrastructure
             deploy_flink
             create_kafka_topics
-            init_cassandra
             get_service_info
             verify_deployment
             ;;
@@ -333,20 +259,6 @@ main() {
             ;;
         "topics")
             create_kafka_topics
-            ;;
-        "cassandra")
-            init_cassandra
-            ;;
-        "cassandra-status")
-            echo "🔍 Cassandra 详细状态检查..."
-            echo "Pod 状态:"
-            kubectl get pods -n infra -l app=cassandra
-            echo ""
-            echo "Pod 日志 (最后 20 行):"
-            kubectl logs -n infra cassandra-0 --tail=20 || echo "无法获取日志"
-            echo ""
-            echo "尝试 CQL 连接:"
-            kubectl exec -n infra statefulset/cassandra -- timeout 15 cqlsh -e "SELECT now() FROM system.local; DESCRIBE KEYSPACES;" || echo "CQL 连接失败"
             ;;
         "status")
             verify_deployment
@@ -371,8 +283,6 @@ main() {
             echo "  infrastructure - 仅部署基础设施 (数据库、消息队列、缓存)"
             echo "  streaming      - 仅部署流计算服务 (Apache Flink)"
             echo "  topics         - 创建 Kafka 主题"
-            echo "  cassandra      - 初始化 Cassandra Keyspace 和表"
-            echo "  cassandra-status - 检查 Cassandra 详细状态和日志"
             echo "  status         - 查看部署状态"
             echo "  info           - 查看服务访问信息"
             echo "  cleanup        - 清理所有资源"
@@ -381,7 +291,7 @@ main() {
             echo "📊 基础设施服务栈:"
             echo "  - 消息队列: Kafka + ZooKeeper + Kafka UI"
             echo "  - 关系数据库: MySQL + phpMyAdmin"
-            echo "  - NoSQL 数据库: Cassandra"
+            echo "  - NoSQL 数据库"
             echo "  - 缓存: Redis + Redis Commander"
             echo "  - 流计算: Apache Flink (JobManager + TaskManager)"
             echo ""

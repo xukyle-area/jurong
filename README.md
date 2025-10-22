@@ -20,7 +20,6 @@
 - Kafka + ZooKeeper 消息队列
 - MySQL + phpMyAdmin 数据库
 - Redis + Redis Commander 缓存
-- Cassandra NoSQL 数据库
 - Flink 流计算（可选）
 - SQL 文件初始化 MySQL（无需 ConfigMap）
 
@@ -50,7 +49,6 @@ kubectl get nodes
 kubectl apply -f manifests/infra-deployment.yaml
 kubectl apply -f deployments/kafka-deployment.yaml
 ```
-注意：Cassandra 已集成在 `infra-deployment.yaml` 中，会自动部署。
 
 ### 4. 启动所有服务
 ```sh
@@ -61,9 +59,6 @@ bash scripts/start-infra-and-session.sh deploy
 ```sh
 # 查看所有服务状态
 bash scripts/start-infra-and-session.sh status
-
-# 检查 Cassandra 详细状态（如需要）
-bash scripts/start-infra-and-session.sh cassandra-status
 ```
 
 ### 6. 访问服务界面
@@ -167,20 +162,6 @@ kubectl scale deployment/<deployment-name> --replicas=3 -n infra
 kubectl delete pod <pod-name> -n infra
 ```
 
-## 常见问题
-
-- 检查 Pod 日志：`kubectl logs <pod-name> -n infra`
-- 检查服务健康：`kubectl get pods -A`
-- 如遇端口冲突，可修改服务暴露端口或端口转发命令。
-- MySQL 初始化失败请检查 SQL 文件语法和挂载路径。
-- Kafka、Redis 等服务未启动请检查 PVC 挂载和资源限制。
-
-### Cassandra 特殊问题
-- **镜像拉取失败**：使用 `cassandra:3.11` 稳定版本
-- **启动缓慢**：Cassandra 首次启动需要 2-5 分钟，请耐心等待
-- **内存不足**：确保 Docker Desktop 分配至少 4GB 内存
-- **检查详细状态**：`./scripts/start-infra-and-session.sh cassandra-status`
-
 ## 适用场景
 
 - 微服务架构的本地开发与测试
@@ -243,18 +224,11 @@ spring.datasource.password=rootpassword
 spring.redis.host=redis-service.infra.svc.cluster.local
 spring.redis.port=6379
 spring.redis.password=redispassword
-
-# Cassandra 数据库
-spring.data.cassandra.contact-points=cassandra-service.infra.svc.cluster.local
-spring.data.cassandra.port=9042
-spring.data.cassandra.keyspace-name=jurong_keyspace
-spring.data.cassandra.local-datacenter=DC1
 ```
 
 ### 服务端点
 - **Kafka**: kafka-service.infra.svc.cluster.local:9092
 - **MySQL**: mysql-service.infra.svc.cluster.local:3306
 - **Redis**: redis-service.infra.svc.cluster.local:6379
-- **Cassandra**: cassandra-service.infra.svc.cluster.local:9042
 - **ZooKeeper**: zookeeper-service.infra.svc.cluster.local:2181
 

@@ -23,4 +23,7 @@ kubectl describe deployment tethys -n app
 如果服务发生了重启，通过这个指令看异常事件：
 ```
 kubectl describe pod <pod-id> -n app
+
+kubectl describe pod tethys-65bb74bcfb-bdgn9 -n app
+
 ```
