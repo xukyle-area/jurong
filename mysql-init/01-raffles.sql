@@ -43,5 +43,13 @@ create table compliance_flink_table_ddl
     updated_at datetime      null comment '更新时间'
 )
     comment '建表语句';
+
+INSERT INTO `rule` (`id`, `category_id`, `code`, `sql_template_id`, `params`, `params_desc`, `version`, `status`, `create_time`, `update_time`) VALUES
+(1, 1, 'calculate', 1, '{}', '无', 2, 1, '2025-10-20 01:02:22', '2025-10-20 01:02:24');
+
+
+INSERT INTO `sql_template` (`id`, `expression`, `desc`, `create_time`, `update_time`) VALUES
+(1, 'SELECT \n	(numberFirst + numberSecond) as addResult,\n	(numberFirst * numberSecond) as multiplyResult\nFROM kafka_table', '两个数相加和相乘', '2025-10-20 01:02:52', '2025-10-20 01:02:54');
+
 -- 显示创建的表
 SHOW TABLES;
