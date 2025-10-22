@@ -36,7 +36,7 @@ spec:
         - name: FLINK_HOST
           value: "flink-jobmanager.infra.svc.cluster.local"
         - name: FLINK_REST_PORT
-          value: "8081"  # 这是关键的修改
+          value: "8081"
         - name: FLINK_RPC_PORT
           value: "6123"
         - name: KAFKA_HOST
