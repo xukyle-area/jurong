@@ -6,10 +6,6 @@
 kubectl get pods -n <namespace>
 ```
 
-```
-kubectl get pods -n <namespace>
-```
-
 如果  deployment 提交了但是 pod 无法正常启动，使用下面指令：
 ```
 kubectl describe pod tethys-7947d98b4c-w7vcp -n app
