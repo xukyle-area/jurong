@@ -231,8 +231,6 @@ main() {
             create_namespace
             deploy_infrastructure
             deploy_flink
-            get_service_info
-            verify_deployment
             ;;
         "mysql-restart")
             restart_mysql_and_execute_sql
