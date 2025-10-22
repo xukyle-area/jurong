@@ -258,7 +258,3 @@ spring.data.cassandra.local-datacenter=DC1
 - **Cassandra**: cassandra-service.infra.svc.cluster.local:9042
 - **ZooKeeper**: zookeeper-service.infra.svc.cluster.local:2181
 
-## 联系方式
-
-如有问题请在本仓库提交 Issue，或通过团队内部渠道联系维护者。
-

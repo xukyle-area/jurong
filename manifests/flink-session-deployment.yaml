@@ -136,8 +136,10 @@ spec:
         - name: FLINK_PROPERTIES
           value: |
             jobmanager.rpc.address: flink-jobmanager
-            taskmanager.numberOfTaskSlots: 2
-            parallelism.default: 1
+            taskmanager.numberOfTaskSlots: 4  # 增加到4个槽位
+            parallelism.default: 2
+            taskmanager.memory.task.heap.size: 512m
+            taskmanager.memory.managed.size: 256m
         volumeMounts:
         - name: flink-data
           mountPath: /tmp
@@ -159,11 +161,11 @@ spec:
           periodSeconds: 10
         resources:
           requests:
-            memory: "1Gi"
-            cpu: "0.5"
+            memory: "2Gi"  # 增加内存请求
+            cpu: "1000m"   # 增加CPU请求
           limits:
-            memory: "2Gi"
-            cpu: "1"
+            memory: "4Gi"  # 增加内存限制
+            cpu: "2000m"   # 增加CPU限制
       volumes:
       - name: flink-data
         emptyDir: {}
